@@ -1,8 +1,7 @@
 # Seedbox Installation Script
 ### Usage
-`export tokens=Your Personal access tokens`
 
-`curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh && bash Install.sh`
+`curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh && bash Install.sh <Personal access tokens> <username> <password>`
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
