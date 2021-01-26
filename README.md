@@ -25,5 +25,5 @@
 		3.File Open Limit
 	Libtorrent Config
 		1.Deluge
-		2.qBittorrent - working
+		2.qBittorrent
 	Optimizied BBR
