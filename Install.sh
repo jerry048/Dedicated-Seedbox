@@ -57,6 +57,7 @@ curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Co
 source .seedbox_installation.sh
 Decision Deluge
 Decision qBittorrent
+Decision rTorrent
 Decision autoremove-torrents
 Decision Netdata
 
