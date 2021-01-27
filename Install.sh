@@ -31,7 +31,6 @@ password=$3
 
 ## Creating User
 useradd $username
-passwd $password
 mkdir -p /home/$username && chown -R $username /home/$username && sudo -u $username chmod +rwx /home/$username
 
 ## Define Decision
@@ -82,3 +81,10 @@ sleep 5
 curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.boot-script.sh
 source .boot-script.sh
 boot_script
+
+## Clear
+rm .seedbox_installation.sh
+rm .tweaking.sh
+rm .boot-script.sh
+
+echo "Seedbox Installation Complete"
