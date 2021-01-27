@@ -16,9 +16,12 @@ apt-get -qqy update
 apt-get -qqy upgrade
 apt-get -qqy install tuned > /dev/null
 apt-get -qqy install dialog > /dev/null
+apt-get -qqy install python3-distutils > /dev/null
+apt-get -qqy install python3-apt > /dev/null
 apt-get -qqy install dkms > /dev/null
 apt-get -qqy install screen > /dev/null
 apt-get -qqy install linux-headers-$(uname -r) > /dev/null
+python3 get-pip.py
 cd $HOME
 clear
 tput setaf 1
