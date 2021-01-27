@@ -83,6 +83,7 @@ source .boot-script.sh
 boot_script
 
 ## Clear
+rm Install.sh
 rm .seedbox_installation.sh
 rm .tweaking.sh
 rm .boot-script.sh
