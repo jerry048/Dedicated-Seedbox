@@ -81,6 +81,7 @@ sleep 5
 curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.boot-script.sh
 source .boot-script.sh
 boot_script
+clear
 
 ## Clear
 rm Install.sh
