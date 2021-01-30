@@ -14,16 +14,7 @@ tput setaf 2; echo "Updating installed packages and install prerequisite"
 tput setaf 7
 apt-get -qqy update
 apt-get -qqy upgrade
-apt-get -qqy install tuned > /dev/null
 apt-get -qqy install dialog > /dev/null
-apt-get -qqy install whois > /dev/null
-apt-get -qqy install screen > /dev/null
-apt-get -qqy install python3-distutils > /dev/null
-apt-get -qqy install python3-apt > /dev/null
-apt-get -qqy install dkms > /dev/null
-apt-get -qqy install linux-headers-$(uname -r) > /dev/null
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3 get-pip.py
 cd $HOME
 clear
 tput setaf 1
