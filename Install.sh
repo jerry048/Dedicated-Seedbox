@@ -22,6 +22,7 @@ apt-get -qqy install python3-distutils > /dev/null
 apt-get -qqy install python3-apt > /dev/null
 apt-get -qqy install dkms > /dev/null
 apt-get -qqy install linux-headers-$(uname -r) > /dev/null
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python3 get-pip.py
 cd $HOME
 clear
