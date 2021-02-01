@@ -46,7 +46,6 @@ function Decision {
 ## Install Seedbox Environment
 clear
 tput setaf 2; echo "Start Installing Seedbox Environment"
-sleep 5
 curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.seedbox_installation.sh
 source .seedbox_installation.sh
 Decision Deluge
@@ -60,7 +59,6 @@ Decision Netdata
 ## Tweaking
 clear
 tput setaf 2; echo "Start Doing System Tweak"
-sleep 5
 curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.tweaking.sh
 source .tweaking.sh
 CPU_Tweaking
@@ -75,7 +73,6 @@ BBR_Tweaking
 ## Configue Boot Script
 clear
 tput setaf 2; echo "Start Configuing Boot Script"
-sleep 5
 curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.boot-script.sh
 source .boot-script.sh
 boot_script
