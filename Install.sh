@@ -14,6 +14,8 @@ tput setaf 2; echo "Updating installed packages and install prerequisite"
 tput setaf 7
 apt-get -qqy update
 apt-get -qqy upgrade
+apt-get -qqy sudo
+apt-get -qqy sysstat
 cd $HOME
 clear
 tput setaf 1
