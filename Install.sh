@@ -27,8 +27,8 @@ username=$2
 password=$3
 
 ## Creating User
-useradd $username
-mkdir -p /home/$username && chown -R $username /home/$username && sudo -u $username chmod +rwx /home/$username
+pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
+useradd -m -p "$pass" "$username"
 
 ## Define Decision
 function Decision {
