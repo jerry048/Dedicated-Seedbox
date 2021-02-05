@@ -5,9 +5,9 @@
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
-		Deluge
-		rTorrent & ruTorrent
-		qBittorrent
+		1.Deluge
+		2.rTorrent & ruTorrent
+		3.qBittorrent
 	Autoremove-torrents
 ###### 2. Tweaking
 	CPU Optimization
