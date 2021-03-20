@@ -31,7 +31,7 @@
 	Libtorrent Config
 		1.Deluge
 		2.qBittorrent
-	Tracker Update Script - Working
+	Tracker Update Script - Working on
 		1. Deluge
 		2. qBittorrent 
 	Optimizied BBR
