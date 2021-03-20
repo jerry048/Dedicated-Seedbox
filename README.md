@@ -1,7 +1,9 @@
 # Seedbox Installation Script
 ### Usage
 
-`wget https://raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh && bash Install.sh <Personal access tokens> <username> <password>`
+`wget https://raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh`
+
+`bash Install.sh <Personal access tokens> <username> <password>`
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
