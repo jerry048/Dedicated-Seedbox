@@ -12,14 +12,19 @@ fi
 ## Update Installed Packages & Installing Essential Packages
 tput setaf 2; echo "Updating installed packages and install prerequisite"
 tput setaf 7
-apt-get -qqy update
-apt-get -qqy upgrade
+echo "deb http://deb.debian.org/debian buster-backports main" | sudo tee -a /etc/apt/sources.list
+apt-get -qqy update && apt-get -qqy upgrade
 apt-get -qqy install sudo
 apt-get -qqy install sysstat
 cd $HOME
 clear
 tput setaf 1
 
+## Update Kernel
+tput setaf 2; echo "Updating Kernel"
+tput setaf 7
+apt-get -qqy install linux-image-5.9.0-0.bpo.5-amd64
+tput setaf 1
 
 ## Grabing information
 tokens=$1
@@ -68,7 +73,7 @@ fstab_Tweaking
 Scheduler_Tweaking
 file_open_limit_Tweaking
 kernel_Tweaking
-BBR_Tweaking
+
 
 ## Configue Boot Script
 clear
@@ -84,4 +89,4 @@ rm .seedbox_installation.sh
 rm .tweaking.sh
 rm .boot-script.sh
 
-echo "Seedbox Installation Complete"
+echo "Seedbox Installation Complete, Please Reboot and Run BBR Script"
