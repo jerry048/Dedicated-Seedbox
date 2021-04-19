@@ -1,7 +1,7 @@
 # Seedbox Installation Script
 ### Usage
 
-`wget https://raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh`
+`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
 
 `bash Install.sh <Personal access tokens> <username> <password> <Cache Size (GiB)>`
 ### Functions
