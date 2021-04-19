@@ -3,7 +3,7 @@
 
 `wget https://raw.githubusercontent.com/jerry048/Seedbox-Install-Script/main/Install.sh && chmod +x Install.sh`
 
-`bash Install.sh <Personal access tokens> <username> <password>`
+`bash Install.sh <Personal access tokens> <username> <password> <Cache Size (GiB)>`
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
