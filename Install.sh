@@ -9,23 +9,6 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 
-## Update Installed Packages & Installing Essential Packages
-tput setaf 2; echo "Updating installed packages and install prerequisite"
-tput setaf 7
-echo "deb http://deb.debian.org/debian buster-backports main" | sudo tee -a /etc/apt/sources.list
-apt-get -qqy update && apt-get -qqy upgrade
-apt-get -qqy install sudo
-apt-get -qqy install sysstat
-cd $HOME
-clear
-tput setaf 1
-
-## Update Kernel
-tput setaf 2; echo "Updating Kernel"
-tput setaf 7
-apt-get -qqy install linux-image-5.9.0-0.bpo.5-amd64
-tput setaf 1
-
 ## Grabing information
 tokens=$1
 username=$2
