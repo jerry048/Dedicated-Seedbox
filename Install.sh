@@ -8,11 +8,14 @@ if [ $(id -u) -ne 0 ]; then
     exit 1 
 fi
 
-
 ## Grabing information
 tokens=$1
 username=$2
 password=$3
+cache=$4
+
+Cache1=$(expr $cache \* 65536)
+Cache2=$(expr $cache \* 1024)
 
 ## Creating User
 pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
@@ -34,8 +37,8 @@ function Decision {
 ## Install Seedbox Environment
 clear
 tput setaf 2; echo "Start Installing Seedbox Environment"
-curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.seedbox_installation.sh
-source .seedbox_installation.sh
+curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.seedbox_installation.sh && source .seedbox_installation.sh
+Update
 Decision Deluge
 Decision qBittorrent
 Decision rTorrent
@@ -47,27 +50,23 @@ Decision Netdata
 ## Tweaking
 clear
 tput setaf 2; echo "Start Doing System Tweak"
-curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.tweaking.sh
-source .tweaking.sh
+curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.tweaking.sh && source .tweaking.sh
 CPU_Tweaking
 NIC_Tweaking
 Network_Other_Tweaking
-fstab_Tweaking
 Scheduler_Tweaking
 file_open_limit_Tweaking
 kernel_Tweaking
-
+BBR_Prepare
 
 ## Configue Boot Script
 clear
 tput setaf 2; echo "Start Configuing Boot Script"
-curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.boot-script.sh
-source .boot-script.sh
+curl -s -O https://$tokens@raw.githubusercontent.com/jerry048/Seedbox-Install-Components/main/.boot-script.sh && source .boot-script.sh
 boot_script
 clear
 
 ## Clear
-rm Install.sh
 rm .seedbox_installation.sh
 rm .tweaking.sh
 rm .boot-script.sh
