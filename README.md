@@ -1,6 +1,6 @@
 # Seedbox Installation Script
 ### !!! This script is only intended to run on freshly installed Debian 10
-This script does not guarantee performance increase and might cause serious bugs to your machine. Please use with cautions
+This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
 
 The Optimized BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. 
 
