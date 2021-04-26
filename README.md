@@ -2,7 +2,7 @@
 ### !!! This script is only intended to run on freshly installed Debian 10
 This script does not guarantee performance increase and might cause serious bugs to your machine. Please use with cautions
 
-The Optimized BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30%-100% of your acutal upload ammount. Please use with caution if you are on a metered network. 
+The Optimized BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. 
 
 I am not actively managing this script, please debug it yourself
 ### Usage
