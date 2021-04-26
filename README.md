@@ -46,7 +46,9 @@ I am not actively managing this script, please debug it yourself
 	- For qBittorrent 4.1.x, you can set it in /home/$username/.config/qBittorrent/qBittorrent.conf by adding Session\AsyncIOThreadsCount=8 under [BitTorrent] section
 
 - TCP buffer size in /etc/sysctl.conf could be a little bit too high if you machine is low on ram. Please change it accordingly.
-- A little bit more fine tunning notes can also be found in /etc/sysctl.conf
+	- A little bit more fine tunning notes can also be found in /etc/sysctl.conf
+
+- For file system, I highly recommend using XFS 
 ### Credit
 qBittorrent Install - https://github.com/userdocs/qbittorrent-nox-static
 
