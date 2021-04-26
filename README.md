@@ -1,6 +1,5 @@
-# This script is only intended to run on Debian 10
-
 # Seedbox Installation Script
+## This script is only intended to run on Debian 10
 ### Usage
 
 `wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
