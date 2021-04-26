@@ -18,7 +18,7 @@ I am not actively managing this script, please debug it yourself
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
-		1.qBittorrent
+		1.qBittorrent with tune
 	Autoremove-torrents
 ###### 2. Tweaking
 	CPU Optimization
