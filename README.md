@@ -1,3 +1,5 @@
+# This script is only intended to run on Debian 10
+
 # Seedbox Installation Script
 ### Usage
 
@@ -13,9 +15,7 @@
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
-		1.Deluge
-		2.rTorrent & ruTorrent
-		3.qBittorrent
+		1.qBittorrent
 	Autoremove-torrents
 ###### 2. Tweaking
 	CPU Optimization
@@ -31,13 +31,6 @@
 		4./proc/sys/net/core
 		5./proc/sys/net/ipv4/
 	Drive Optimization
-		1.Mounting Options
-		2.I/O Scheduler
-		3.File Open Limit
-	Libtorrent Config
-		1.Deluge
-		2.qBittorrent
-	Tracker Update Script - Working on
-		1. Deluge
-		2. qBittorrent 
+		1.I/O Scheduler
+		2.File Open Limit
 	Optimizied BBR
