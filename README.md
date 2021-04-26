@@ -4,12 +4,20 @@
 
 `wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
 
-`bash Install.sh <Personal access tokens>
-<username> <password> <Cache Size(unit:GiB)>`
+`bash Install.sh <username> <password> <Cache Size(unit:GiB)>`
 
 #### BBR Script
 
-`bash BBR.sh <Personal access tokens>`
+`bash BBR.sh`
+
+### Credit
+qBittorrent Install - https://github.com/userdocs/qbittorrent-nox-static
+
+qBittorrent Password Set - https://github.com/KozakaiAya/libqbpasswd & https://amefs.net/archives/2027.html
+
+autoremove-torrents - https://github.com/jerrymakesjelly/autoremove-torrents
+
+BBR Install - https://github.com/KozakaiAya/TCP_BBR
 	
 ### Functions
 ###### 1. Install Seedbox Environment
