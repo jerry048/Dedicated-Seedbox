@@ -1,5 +1,3 @@
-# A huge bug has been found, leading to clients announcing more upload than they really do after pausing and resuming torrents. Please stop using the script and check if that happened to you.
-
 # Seedbox Installation Script
 ### !!! This script is only intended to run on freshly installed Debian 10
 This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
