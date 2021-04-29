@@ -14,7 +14,10 @@ I am not actively managing this script, please debug it yourself
 #### Run BBR Script after Reboot
 
 `bash BBR.sh`
-	
+
+#### Tuning Script if you have already installed clients
+
+`bash Tune.sh`
 ### Functions
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
