@@ -16,6 +16,14 @@ cache=$3
 Cache1=$(expr $cache \* 65536)
 Cache2=$(expr $cache \* 1024)
 
+## Check existence of input argument in a Bash shell script
+
+if [ -z "$3" ]
+  then
+    tput setaf 1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:GiB)>"
+    exit
+fi
+
 ## Creating User
 pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
 useradd -m -p "$pass" "$username"
