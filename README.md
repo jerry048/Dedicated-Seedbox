@@ -44,7 +44,7 @@ I am not actively managing this script, please debug it yourself
 		2.File Open Limit
 	Optimizied BBR
 ### Tuning.sh
-###### Options
+###### Tuning Options:
 	1. Deluge Libtorrent tweaking (Only work on Libtorrent 1.1.14 with ltconfig plugins installed)
 	2. System Tuning
 		CPU Optimization
