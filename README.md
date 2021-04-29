@@ -1,26 +1,27 @@
 # Seedbox Installation Script
-### !!! This script is only intended to run on freshly installed Debian 10
+### !!! These scripts are only intended to run on freshly installed Debian 10
 This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
 
 The Optimized BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. (Or even on a unmetered network, since this is boarderline DDoS already)
 
 I am not actively managing this script, please debug it yourself
-### Usage
-
+## Usage
+### Install.sh
 `wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
 
 `bash Install.sh <username> <password> <Cache Size(unit:GiB)>`
 
-#### Run BBR Script after Reboot
+##### Run BBR Script after Reboot
 
 `bash BBR.sh`
 
-#### Tuning Script if you have already installed clients
+### Tuning.sh if you have already installed clients (Likely to break something, becareful)
 
 `wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh && chmod +x Tune.sh`
 
 `bash Tune.sh`
-### Functions
+## Functions
+### Install.sh
 ###### 1. Install Seedbox Environment
 	BitTorrent Client
 		1.qBittorrent with tune
@@ -32,7 +33,7 @@ I am not actively managing this script, please debug it yourself
 		1.NIC Config
 		2.ifconfig
 		3.ip route
-	sysctl values
+	Kenel Values
 		1./proc/sys/kernel/
 		2./proc/sys/fs/
 		3./proc/sys/vm
@@ -42,7 +43,16 @@ I am not actively managing this script, please debug it yourself
 		1.I/O Scheduler
 		2.File Open Limit
 	Optimizied BBR
-	
+### Tuning.sh
+###### 1. Tweaking
+	Deluge Libtorrent tweaking (Only work on Libtorrent 1.1.14 with ltconfig plugins installed)
+	System Tuning
+		CPU Optimization
+		Network Optimization
+		sysctl values
+		Drive Optimization
+	Optimizied BBR Install
+	Configuring Boot Script for certain tunings
 ### Fine Tunning Note
 - The Cache size should be set to around 1/4 of the machine total available ram. In case you opt for qBittorrent 4.3.x, you need to take account into memory leakage and set it to 1/8. 
 
