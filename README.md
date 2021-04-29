@@ -17,6 +17,8 @@ I am not actively managing this script, please debug it yourself
 
 #### Tuning Script if you have already installed clients
 
+`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh && chmod +x Tune.sh`
+
 `bash Tune.sh`
 ### Functions
 ###### 1. Install Seedbox Environment
