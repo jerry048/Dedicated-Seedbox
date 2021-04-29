@@ -19,6 +19,7 @@ while true; do
     do
         case $opt in
             "Deluge Tuning")
+                read -p "Enter username of your Deluge: " username
                 Deluge_libtorrent; break
                 ;;
             "System Tuning")
