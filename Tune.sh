@@ -18,7 +18,7 @@ while true; do
     select opt in "${options[@]}"
     do
         case $opt in
-            "Deluge Tuning"
+            "Deluge Tuning")
                 Deluge_libtorrent; break
                 ;;
             "System Tuning")
