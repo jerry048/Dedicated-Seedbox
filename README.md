@@ -44,15 +44,15 @@ I am not actively managing this script, please debug it yourself
 		2.File Open Limit
 	Optimizied BBR
 ### Tuning.sh
-###### 1. Tweaking
-	Deluge Libtorrent tweaking (Only work on Libtorrent 1.1.14 with ltconfig plugins installed)
-	System Tuning
+###### Options
+	1. Deluge Libtorrent tweaking (Only work on Libtorrent 1.1.14 with ltconfig plugins installed)
+	2. System Tuning
 		CPU Optimization
 		Network Optimization
 		sysctl values
 		Drive Optimization
-	Optimizied BBR Install
-	Configuring Boot Script for certain tunings
+	3. Optimizied BBR Install
+	4. Configuring Boot Script for certain tunings
 ### Fine Tunning Note
 - The Cache size should be set to around 1/4 of the machine total available ram. In case you opt for qBittorrent 4.3.x, you need to take account into memory leakage and set it to 1/8. 
 
