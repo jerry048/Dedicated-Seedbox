@@ -28,6 +28,7 @@ while true; do
                 CPU_Tweaking; NIC_Tweaking; Network_Other_Tweaking; Scheduler_Tweaking; echo "net.core.default_qdisc = fq" >> /etc/sysctl.conf; echo "net.ipv4.tcp_congestion_control = bbrx" >> /etc/sysctl.conf; kernel_Tweaking; break
                 ;;
             "BBR Preparation")
+                apt-get -qqy install sudo
                 BBR_Prepare; break
                 ;;
             "BBR Install")
