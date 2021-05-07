@@ -17,9 +17,7 @@
 
 ### Tuning.sh 假如你已經安裝了盒子環境 (有機會導致bug，請小心使用)
 
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh && chmod +x Tune.sh`
-
-`bash Tune.sh`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh)`
 ## 功能
 ### Install.sh
 ###### 1. 安裝盒子環境
