@@ -8,9 +8,7 @@ The Optimized BBR would increase packet retransmission rate and waste your bandw
 I am not actively managing this script, please debug it yourself
 ## Usage
 ### Install.sh
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
-
-`bash Install.sh <username> <password> <Cache Size(unit:GiB)>`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:GiB)>`
 
 ##### Run BBR Script after Reboot
 
