@@ -9,8 +9,8 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 # Read Source
-curl -s -O https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh && source .tweaking.sh
-curl -s -O https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh && source .boot-script.sh
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
 
 while true; do
     tput setaf 2; echo "Time to go brr"
@@ -41,8 +41,3 @@ while true; do
         esac
     done
 done
-
-
-## Clear
-rm .tweaking.sh
-rm .boot-script.sh
