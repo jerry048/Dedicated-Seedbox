@@ -11,15 +11,13 @@
 
 `bash Install.sh <用戶名稱> <用戶密碼> <緩存大小(單位:GiB)>`
 
-##### 再重啓后運行BBR脚本
+##### 在重啓后運行BBR脚本
 
 `bash BBR.sh`
 
 ### Tuning.sh 假如你已經安裝了盒子環境 (有機會導致bug，請小心使用)
 
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh && chmod +x Tune.sh`
-
-`bash Tune.sh`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh)`
 ## 功能
 ### Install.sh
 ###### 1. 安裝盒子環境
@@ -53,21 +51,21 @@
 		硬盤優化
 	3. 魔改 BBR 安裝
 	4. 設置開機自動優化的脚本
-### Fine Tunning Note
+### 進階優化備注
 - 緩存大小應該設置在機器内存大小的 1/4 左右. 假如你使用的是qBittorrent 4.3.x, 你需要考慮到内存溢出的問題并且設置緩存大小在機器内存大小的 1/8. 
 
 - 異步 I/O 綫程數的基礎設定是 4， 這設定對HDD比較友好. 假如你使用的是SSD甚至是NVMe的話, 你可以調整此參數到 8 甚至到 16. 
 	- 在qBittorrent 4.3.x 的話，你可以在高級選項欄目中更改此項設定. 
 	- 在qBittorrent 4.1.x 的話, 你可以在 /home/$username/.config/qBittorrent/qBittorrent.conf 裏的 [BitTorrent] 欄目下加入 Session\AsyncIOThreadsCount=8
 
-- 在/etc/sysctl.conf 設置的 TCP 緩存大小對於一些地段機器來説可能會太大。 請根據情況更改.
+- 在/etc/sysctl.conf 設置的 TCP 緩存大小對於一些低端機器來説可能會太大。 請根據情況更改.
 	- 在 /etc/sysctl.conf 文檔中也能找到別的優化備注
 
 - 文件系統的話, 本人强烈推薦使用 XFS 
 ### 嗚謝
-qBittorrent Install - https://github.com/userdocs/qbittorrent-nox-static
+qBittorrent 安裝 - https://github.com/userdocs/qbittorrent-nox-static
 
-qBittorrent Password Set - https://github.com/KozakaiAya/libqbpasswd & https://amefs.net/archives/2027.html
+qBittorrent 密碼設置 - https://github.com/KozakaiAya/libqbpasswd & https://amefs.net/archives/2027.html
 
 autoremove-torrents - https://github.com/jerrymakesjelly/autoremove-torrents
 

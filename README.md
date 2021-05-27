@@ -1,4 +1,5 @@
 # Seedbox Installation Script
+[中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
 ### !!! These scripts are only intended to run on freshly installed Debian 10
 This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
 
@@ -7,9 +8,7 @@ The Optimized BBR would increase packet retransmission rate and waste your bandw
 I am not actively managing this script, please debug it yourself
 ## Usage
 ### Install.sh
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
-
-`bash Install.sh <username> <password> <Cache Size(unit:GiB)>`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:GiB)>`
 
 ##### Run BBR Script after Reboot
 
@@ -17,9 +16,8 @@ I am not actively managing this script, please debug it yourself
 
 ### Tuning.sh if you have already installed clients (Likely to break something, becareful)
 
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh && chmod +x Tune.sh`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh)`
 
-`bash Tune.sh`
 ## Functions
 ### Install.sh
 ###### 1. Install Seedbox Environment

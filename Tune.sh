@@ -8,12 +8,14 @@ if [ $(id -u) -ne 0 ]; then
     exit 1 
 fi
 
+
 # Read Source
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
 
 while true; do
     tput setaf 2; echo "Time to go brr"
+    source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
     options=("Deluge Tuning" "System Tuning" "BBR Preparation" "BBR Install" "Configure Boot Script")
     select opt in "${options[@]}"
     do
@@ -35,6 +37,7 @@ while true; do
                 BBR_Tweaking; break
                 ;;
             "Configure Boot Script")
+                source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
                 boot_script; break
                 ;;
             *) tput setaf 1; echo "Please choose a valid action";;
