@@ -44,7 +44,7 @@ function Decision {
 ## Install Seedbox Environment
 clear
 tput setaf 2; echo "Start Installing Seedbox Environment"
-curl -s -O https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.seedbox_installation.sh && source .seedbox_installation.sh
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.seedbox_installation.sh)
 Update
 Decision qBittorrent
 Decision autoremove-torrents
@@ -55,7 +55,7 @@ Decision autoremove-torrents
 ## Tweaking
 clear
 tput setaf 2; echo "Start Doing System Tweak"
-curl -s -O https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh && source .tweaking.sh
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
 CPU_Tweaking
 NIC_Tweaking
 Network_Other_Tweaking
@@ -67,13 +67,8 @@ BBR_Prepare
 ## Configue Boot Script
 clear
 tput setaf 2; echo "Start Configuing Boot Script"
-curl -s -O https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh && source .boot-script.sh
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
 boot_script
 clear
-
-## Clear
-rm .seedbox_installation.sh
-rm .tweaking.sh
-rm .boot-script.sh
 
 echo "Seedbox Installation Complete, Please Reboot and Run BBR Script"
