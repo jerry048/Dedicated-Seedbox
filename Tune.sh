@@ -11,7 +11,6 @@ fi
 
 # Read Source
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
 
 while true; do
     tput setaf 2; echo "Time to go brr"
