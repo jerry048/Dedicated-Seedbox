@@ -7,9 +7,7 @@
 我沒有時間管理此腳本，有什麼問題請自行調試
 ## 用法
 ### Install.sh
-`wget https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh && chmod +x Install.sh`
-
-`bash Install.sh <用戶名稱> <用戶密碼> <緩存大小(單位:GiB)>`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <用戶名稱> <用戶密碼> <緩存大小(單位:GiB)>`
 
 ##### 在重啓后運行BBR脚本
 
