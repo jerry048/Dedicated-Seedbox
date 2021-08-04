@@ -1,10 +1,13 @@
 #!/bin/sh
 
-clear
+tput sgr0; clear
+
+## Load text color settings
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/tput.sh)
 
 ## Check Root Privilege
 if [ $(id -u) -ne 0 ]; then 
-    tput setaf 1; echo  "This script needs root permission to run" 
+    warn_1; echo  "This script needs root permission to run"; normal_4 
     exit 1 
 fi
 
@@ -20,55 +23,62 @@ Cache2=$(expr $cache \* 1024)
 
 if [ -z "$3" ]
   then
-    tput setaf 1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:GiB)>"
-    exit
+    warn_1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:GiB)>"; normal_4
+    exit 1
+fi
+
+re='^[0-9]+$'
+if ! [[ $3 =~ $re ]] ; then
+   warn_1; echo "Cache Size has to be an integer"; normal_4
+   exit 1
 fi
 
 ## Creating User
+warn_2
 pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
 useradd -m -p "$pass" "$username"
+normal_2
 
 ## Define Decision
 function Decision {
 	while true; do
-		tput setaf 2; read -p "Do you wish to install $1? (Y/N):" yn
+		need_input; read -p "Do you wish to install $1? (Y/N):" yn; normal_2
 		case $yn in
-			[Yy]* ) tput setaf 2; echo "Installing $1"; $1; break;;
-			[Nn]* ) tput setaf 2; echo "Skipping"; break;;
-			* ) tput setaf 1; echo "Please answer yes or no.";;
+			[Yy]* ) echo "Installing $1"; $1; break;;
+			[Nn]* ) echo "Skipping"; break;;
+			* ) warn_1; echo "Please answer yes or no."; normal_2;;
 		esac
 	done
 }
 
 
 ## Install Seedbox Environment
-clear
-tput setaf 2; echo "Start Installing Seedbox Environment"
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.seedbox_installation.sh)
+tput sgr0; clear
+normal_1; echo "Start Installing Seedbox Environment"; warn_2
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
 Update
 Decision qBittorrent
+Decision Deluge
 Decision autoremove-torrents
 
 
-
-
 ## Tweaking
-clear
-tput setaf 2; echo "Start Doing System Tweak"
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/.tweaking.sh)
+tput sgr0; clear
+normal_1; echo "Start Doing System Tweak"; warn_2
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/tweaking.sh)
 CPU_Tweaking
 NIC_Tweaking
 Network_Other_Tweaking
 Scheduler_Tweaking
 file_open_limit_Tweaking
 kernel_Tweaking
-BBR_Prepare
+Decision Tweaked_BBR
 
 ## Configue Boot Script
-clear
+tput sgr0; clear
 tput setaf 2; echo "Start Configuing Boot Script"
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh)
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/boot-script.sh)
 boot_script
-clear
+tput sgr0; clear
 
-echo "Seedbox Installation Complete, Please Reboot and Run BBR Script"
+echo "Seedbox Installation Complete"
