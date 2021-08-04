@@ -42,7 +42,7 @@ normal_2
 ## Define Decision
 function Decision {
 	while true; do
-		need_input; read -p "Do you wish to install $1? (Y/N):" yn; normal_2
+		need_input; read -p "Do you wish to install $1? (Y/N):" yn; normal_1
 		case $yn in
 			[Yy]* ) echo "Installing $1"; $1; break;;
 			[Nn]* ) echo "Skipping"; break;;
