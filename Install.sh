@@ -89,12 +89,12 @@ Decision Tweaked_BBR
 
 ## Configue Boot Script
 tput sgr0; clear
-tput setaf 2; echo "Start Configuing Boot Script"
+normal_1; echo "Start Configuing Boot Script"
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/boot-script.sh)
 boot_script
 tput sgr0; clear
 
-echo "Seedbox Installation Complete"
+normal_1; echo "Seedbox Installation Complete"
 publicip=$(curl https://ipinfo.io/ip)
 [[ ! -z "$qbport" ]] && echo "qBittorrent $version is successfully installed, visit at $publicip:$qbport"
 [[ ! -z "$deport" ]] && echo "Deluge $Deluge_Ver is successfully installed, visit at $publicip:$dewebport"
