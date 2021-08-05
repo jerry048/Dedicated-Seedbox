@@ -11,10 +11,25 @@ if [ $(id -u) -ne 0 ]; then
     exit 1 
 fi
 
+## Check Linux Distro
+distro_codename="$(source /etc/os-release && printf "%s" "${VERSION_CODENAME}")"
+if ! [[ $distro_codename = buster ]] ; then
+	warn_1; echo "Only Debian 10 is supported"; normal_4
+	exit 1
+fi
+
+## Check Virtual Environment
+systemd-detect-virt > /dev/null
+if [ $? -eq 0 ]; then
+	warn_1; echo "Virtualization is detected, please run the Shared-Seedbox script at https://github.com/jerry048/Shared-Seedbox"; normal_4
+	exit 1
+fi
+
 ## Grabing information
 username=$1
 password=$2
 cache=$3
+publicip=$(curl https://ipinfo.io/ip)
 
 Cache1=$(expr $cache \* 65536)
 Cache2=$(expr $cache \* 1024)
@@ -82,3 +97,6 @@ boot_script
 tput sgr0; clear
 
 echo "Seedbox Installation Complete"
+[[ ! -z "$qbport" ]] && echo "qBittorrent $version is successfully installed, visit at $publicip:$qbport"
+[[ ! -z "$deport" ]] && echo "Deluge $Deluge_Ver is successfully installed, visit at $publicip:$dewebport"
+[[ ! -z "$bbrx" ]] && echo "Tweaked BBR is successfully installed, please reboot for it to take effect"
