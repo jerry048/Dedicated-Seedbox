@@ -21,8 +21,7 @@ fi
 ## Check Virtual Environment
 systemd-detect-virt > /dev/null
 if [ $? -eq 0 ]; then
-	warn_1; echo "Virtualization is detected, please run the Shared-Seedbox script at https://github.com/jerry048/Shared-Seedbox"; normal_4
-	exit 1
+	warn_1; echo "Virtualization is detected, part of the script might not run"; normal_4
 fi
 
 ## Grabing information
