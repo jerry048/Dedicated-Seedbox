@@ -53,21 +53,21 @@
 	- 在qBittorrent 4.3.x 的話，你可以在高級選項欄目中更改此項設定. 
 	- 在qBittorrent 4.1.x 的話, 你可以在 /home/$username/.config/qBittorrent/qBittorrent.conf 裏的 [BitTorrent] 欄目下加入 `Session\AsyncIOThreadsCount=8`
 		- 請在修改前關閉qBittorrent
-	- 在Deluge 的話，你可以通過[ltconfig]<https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1>更改此項設定
+	- 在Deluge 的話，你可以通過[ltconfig](https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1)更改此項設定
 		- aio_threads=8
 
 - 在一些 I/O 較差的機器，send_buffer_low_watermark, send_buffer_watermark & send_buffer_watermark_factor 這三項設定應該調低
 	- 在qBittorrent 4.3.x 的話，你可以在高級選項欄目中更改此項設定. 
 	- 在qBittorrent 4.1.x 的話，你可以在 /home/$username/.config/qBittorrent/qBittorrent.conf 裏的 [BitTorrent] 欄目下加入`Session\SendBufferWatermark=5120`, `Session\SendBufferLowWatermark=1024`和 `ession\SendBufferWatermarkFactor=150`
 		- 請在修改前關閉qBittorrent
-	- 在Deluge 的話，你可以通過[ltconfig]<https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1>更改此項設定
+	- 在Deluge 的話，你可以通過[ltconfig](https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1)更改此項設定
 		- send_buffer_low_watermark=1048576
 		- send_buffer_watermark=5242880
 		- send_buffer_watermark_factor=150
 
 - 在一些 CPU 較差的機器，tick_internal 應該調高來節省CPU指令周期
 	- qBittorrent 暫時還沒為修改這設定
-	- 在Deluge 的話，你可以通過[ltconfig]<https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1>更改此項設定
+	- 在Deluge 的話，你可以通過[ltconfig](https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1)更改此項設定
 		- tick_interval=250
 
 - 在/etc/sysctl.conf 設置的 TCP 緩存大小對於一些低端機器來説可能會太大。 請根據情況更改.
