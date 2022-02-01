@@ -26,8 +26,8 @@ while true; do
                 ;;
             "Tweaked BBR Install")
                 apt-get -qqy install sudo
-                Tweaked_BBR; break
-                normal_1; echo "Reboot for Tweaked BBR to take effect";
+                Tweaked_BBR
+                normal_1; echo "Reboot for Tweaked BBR to take effect"; break
                 ;;
             "System Tuning")
                 CPU_Tweaking; NIC_Tweaking; Network_Other_Tweaking; Scheduler_Tweaking; kernel_Tweaking; break
