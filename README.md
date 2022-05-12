@@ -5,7 +5,7 @@ This script does not guarantee performance increase and might cause some serious
 
 The Tweaked BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. 
 
-I am not actively managing this script, please debug it yourself
+Support for Debian 11 is probably the last update, I am not actively managing this script, please debug it yourself
 ## Usage
 ### Install.sh
 `bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:GiB)>`
