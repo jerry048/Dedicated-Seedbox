@@ -1,6 +1,6 @@
 # Seedbox Installation Script
 [中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
-### !!! These scripts are only intended to run on freshly installed Debian 10
+### !!! These scripts are only intended to run on freshly installed Debian 10/11
 This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
 
 The Tweaked BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. 
