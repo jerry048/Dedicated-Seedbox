@@ -45,8 +45,6 @@ username=$1
 password=$2
 cache=$3
 
-## Grabing the informations of the server to be used in determining certain Tweaking parameters
-
 #Converting the cache size to Deluge's unit  (16KiB)
 Cache_de=$(expr $cache \* 65536)
 #Converting the cache to qBittorrent's unit (MiB)
