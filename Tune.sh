@@ -27,7 +27,7 @@ while true; do
             "Deluge Tuning")
                 need_input; read -p "Enter username of your Deluge: " username
                 read -p "Cache Size (unit:GiB): " cache;
-                Cache1=$(expr $cache \* 65536)
+                Cache_de=$(expr $cache \* 65536)
                 Deluge_libtorrent; break
                 ;;
             "Tweaked BBR Install")
