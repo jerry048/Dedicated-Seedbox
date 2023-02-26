@@ -8,7 +8,7 @@ The Tweaked BBR would increase packet retransmission rate and waste your bandwid
 Support for Debian 11 is probably the last update, I am not actively managing this script, please debug it yourself
 ## Usage
 ### Install.sh
-`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:GiB)>`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:MiB)>`
 
 ### Tune.sh if you have already installed clients (Likely to break something, becareful)
 

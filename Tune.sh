@@ -39,8 +39,22 @@ while true; do
                 CPU_Tweaking; NIC_Tweaking; Network_Other_Tweaking; Scheduler_Tweaking; kernel_Tweaking; break
                 ;;
             "Configure Boot Script")
-                source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/boot-script.sh)
-                boot_script; break
+                normal_1; echo "Start Configuing Boot Script"
+                wget https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh && chmod +x .boot-script.sh
+                cat << EOF > /etc/systemd/system/boot-script.service
+[Unit]
+Description=boot-script
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/.boot-script.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+                systemctl enable boot-script.service; break
                 ;;
             *) warn_1; echo "Please choose a valid action";;
         esac

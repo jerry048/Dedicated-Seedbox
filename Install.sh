@@ -33,7 +33,7 @@ if [[ $distro_codename != buster ]] && [[ $distro_codename != bullseye ]] ; then
 fi
 
 
-## Check Virtual Environment since part of the script might not work on virtual machine
+## Check Virtual Environment since some of the tunning might not work on virtual machine
 systemd-detect-virt > /dev/null
 if [ $? -eq 0 ]; then
 	warn_1; echo "Virtualization is detected, part of the script might not run"; normal_4
@@ -46,9 +46,9 @@ password=$2
 cache=$3
 
 #Converting the cache size to Deluge's unit  (16KiB)
-Cache_de=$(expr $cache \* 65536)
+Cache_de=$(expr $cache \* 64)
 #Converting the cache to qBittorrent's unit (MiB)
-Cache_qB=$(expr $cache \* 1024)
+Cache_qB= $cache
 
 
 ## Check existence of input argument in a Bash shell script
@@ -56,7 +56,7 @@ Cache_qB=$(expr $cache \* 1024)
 #Check if user fill in all the required variables
 if [ -z "$3" ]
   then
-    warn_1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:GiB)>"; normal_4
+    warn_1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:MiB)>"; normal_4
     exit 1
 fi
 
@@ -100,8 +100,21 @@ Decision Tweaked_BBR
 ## Configue Boot Script
 tput sgr0; clear
 normal_1; echo "Start Configuing Boot Script"
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/boot-script.sh)
-boot_script
+wget https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh && chmod +x .boot-script.sh
+cat << EOF > /etc/systemd/system/boot-script.service
+[Unit]
+Description=boot-script
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/.boot-script.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable boot-script.service
 tput sgr0; clear
 
 normal_1; echo "Seedbox Installation Complete"
