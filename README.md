@@ -1,12 +1,11 @@
 # Seedbox Installation Script
 [中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
-### !!! These scripts are only intended to run on freshly installed Debian 10/11
+### !!! The script will create a new user account to contain the bitorrent clients using the provided password. Please use a strong password
 ### !!! The unit of Cache Size has been changed from GiB to MiB. This allow finer tunning and the script to be used in machine with less than 1GB of ram. 1GiB = 1024 MiB.
-This script does not guarantee performance increase and might cause some serious bugs to your machine. The idiot that write this script literally has zero coding knowledge and probably fuck up somewhere. Please use with cautions
+### !!! These scripts are only intended to run on freshly installed Debian 10/11
 
 The Tweaked BBR would increase packet retransmission rate and waste your bandwidth. On 10Gbps network, the waste is around 30% of your acutal upload ammount and around 10% on a 1Gbps. Please use with caution if you are on a metered network. 
 
-Support for Debian 11 is probably the last update, I am not actively managing this script, please debug it yourself
 ## Usage
 ### Install.sh
 `bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <username> <password> <Cache Size(unit:MiB)>`
@@ -53,7 +52,7 @@ Support for Debian 11 is probably the last update, I am not actively managing th
 - The Cache size should be set to around 1/4 of the machine total available ram. In case you opt for qBittorrent 4.3.x, you need to take account into memory leakage and set it to 1/8. 
 
 - aio_threads default setting is 4 and should be good for HDD. For SSD or even NVMe server, you might consider increase it to 8 or even 16. 
-	- For qBittorrent 4.3.x you can change it in the advance setting tab. 
+	- For qBittorrent 4.3.x - 4.5.x you can change it in the advance setting tab. 
 	- For qBittorrent 4.1.x, you can set it in /home/$username/.config/qBittorrent/qBittorrent.conf by adding `Session\AsyncIOThreadsCount=8` under [BitTorrent] section
 		- Please shut down qBittorrent before the editing
 	- For Deluge, you can install [ltconfig](https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1) and edit through the plugins
