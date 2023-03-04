@@ -1,6 +1,6 @@
 # Seedbox Installation Script
 [中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
-### !!! The script will create a new user account to contain the bitorrent clients using the provided password. Please use a strong password
+### !!! The script will create a new user account to contain the BitTorrent clients using the provided password. Please use a strong password
 ### !!! The unit of Cache Size has been changed from GiB to MiB. This allow finer tunning and the script to be used in machine with less than 1GB of ram. 1GiB = 1024 MiB.
 ### !!! These scripts are only intended to run on freshly installed Debian 10/11
 
