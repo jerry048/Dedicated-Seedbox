@@ -72,8 +72,7 @@ The Tweaked BBR would increase packet retransmission rate and waste your bandwid
 	- For Deluge, you can install [ltconfig](https://github.com/ratanakvlun/deluge-ltconfig/releases/tag/v0.3.1) and edit through the plugins
 		- tick_interval=250
 
-- TCP buffer size in /etc/sysctl.conf could be a little bit too high if you machine is low on ram. Please change it accordingly.
-	- A little bit more fine tunning notes can also be found in /etc/sysctl.conf
+- A little bit more fine tunning notes can also be found in /etc/sysctl.conf
 
 - For file system, I highly recommend using XFS 
 
