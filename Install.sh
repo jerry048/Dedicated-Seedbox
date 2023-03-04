@@ -48,7 +48,7 @@ cache=$3
 #Converting the cache size to Deluge's unit  (16KiB)
 Cache_de=$(expr $cache \* 64)
 #Converting the cache to qBittorrent's unit (MiB)
-Cache_qB= $cache
+Cache_qB=$cache
 
 
 ## Check existence of input argument in a Bash shell script
