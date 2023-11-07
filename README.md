@@ -1,3 +1,17 @@
+# Status update
+Hey everyone, I'm sorry to say that I have to take a break from this project for a while. I've been swamped with other stuff, and I need some time to catch up. I hope to resume working on it around Christmas if everything goes well.
+
+Here are some of the things I want to work on when I come back (in order, or not):
+- Tidy up the code to be more maintainable
+- qBittorrent 4.6.0
+- BBR v3
+- Debian 12
+- Ubuntu support
+- ARM support
+
+Thanks for your support and understanding. See you soon!
+
+ 
 # Seedbox Installation Script
 [中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
 ### !!! The script will create a new user account to contain the BitTorrent clients using the provided password. Please use a strong password
