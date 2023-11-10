@@ -4,7 +4,7 @@ Hey everyone, I'm sorry to say that I have to take a break from this project for
 Here are some of the things I want to work on when I come back (in order, or not):
 - Tidy up the code to be more maintainable
 - qBittorrent 4.6.0
-- BBR v3
+- BBR v3 / TCP-Brutal
 - Debian 12
 - Ubuntu support
 - ARM support
