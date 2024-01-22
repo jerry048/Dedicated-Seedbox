@@ -1,10 +1,8 @@
 # Status update
-Hey everyone, I'm sorry to say that I have to take a break from this project for a while. I've been swamped with other stuff, and I need some time to catch up. I hope to resume working on it around Christmas if everything goes well.
-
-Here are some of the things I want to work on when I come back (in order, or not):
-- Tidy up the code to be more maintainable
-- qBittorrent 4.6.0
-- BBR v3 / TCP-Brutal
+Hello. I am back at updating the script. The ETA of the next update would be late Feb. 
+Here are some of the things that hopefully would be made into the update:
+- Tidy up the code to be more maintainable (50% Done)
+- qBittorrent 4.6.2 & 4.5.5
 - Debian 12
 - Ubuntu support
 - ARM support
