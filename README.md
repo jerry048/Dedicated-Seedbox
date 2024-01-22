@@ -1,6 +1,6 @@
 # Status update
 Hello. I am back at updating the script. The ETA of the next update would be late Feb. 
-Here are some of the things that hopefully would be made into the update:
+Below are some of the features that I hope to include in the upcoming update:
 - Tidy up the code to be more maintainable (50% Done)
 - qBittorrent 4.6.2 & 4.5.5
 - Debian 12
