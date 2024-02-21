@@ -1,11 +1,13 @@
 # Status update
 Hello. I am back at updating the script. The ETA of the next update would be late Feb. 
 Below are some of the features that I hope to include in the upcoming update:
-- Tidy up the code to be more maintainable (50% Done)
-- qBittorrent 4.6.2 & 4.5.5
-- Debian 12
-- Ubuntu support
-- ARM support
+- Tidy up the code to be more maintainable 75% Done
+- qBittorrent 4.6.2 & 4.5.5 
+- libtorrent 2.0.10 
+- Debian 12 100%
+- Ubuntu support 100%
+- ARM support 75%
+- BBR v3 Support 100%
 
 Thanks for your support and understanding. See you soon!
 
