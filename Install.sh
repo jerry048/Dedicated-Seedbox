@@ -162,7 +162,7 @@ tput sgr0; clear
 info "Start Installing Seedbox Environment"
 echo -e "\n"
 # System Update & Dependencies Install
-install_ update "Updating System" "System is updated" "System update failed. Please consult the log file at /tmp/update_error" "/tmp/update_error" update_success
+install_ update "Updating System" "/tmp/update_error" update_success
 
 # qBittorrent
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Torrent%20Clients/qBittorrent/qBittorrent_install.sh)
