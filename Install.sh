@@ -187,7 +187,6 @@ if [[ ! -z "$qb_install" ]]; then
 	fi
 	## Create user if it does not exist
 	if ! id -u $username > /dev/null 2>&1; then
-		warn "User $username does not exist. Creating it now..."
 		useradd -m -s /bin/bash $username
 		# Check if the user is created successfully
 		if [ $? -ne 0 ]; then
