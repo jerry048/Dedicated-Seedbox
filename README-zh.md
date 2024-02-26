@@ -1,65 +1,50 @@
-# 狀態更新
-大家好，很抱歉的告訴大家，我需要暫時從這個項目中休息一段時間。最近功課實在是太忙，完全沒有跟新代碼的閑余。如果一切順利的話，希望能在聖誕節左右能夠回來。
-
-以下是我回來後想的一些事情：
-- 整理代碼以便更好的維護
-- qBittorrent 4.6.0
-- BBR v3
-- Debian 12
-- Ubuntu支持
-- ARM支持
-  
-感謝大家的支持和理解。再見！
 
 # Seedbox Installation Script
-### !!! 這些腳本僅可在新安裝的Debian 10/11上運行 
-### !!! 緩存的單位由GiB更改為MiB。識用于有微調要求或者機器内存較緊張的用戶。 1GiB = 1024MiB
-本腳本不保證能提高盒子性能，並且可能會導致您的服務器直接卡死。編寫此腳本的菜雞對編程一竅不通，並且可能在腳本里埋下了很多坑，請謹慎使用
-
-魔改BBR會增加數據包的重傳率，做成帶寬浪費。在10Gbps網絡上，開銷大約是您真實上傳量的30％，而在1Gbps上大約是10％。
-
-我沒有時間管理此腳本，有什麼問題請自己解決啦~
 ## 用法
-### Install.sh
-`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) <用戶名稱> <用戶密碼> <緩存大小(單位:MiB)>`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) -u <用戶名稱> -p <密碼> -c <緩存大小(單位:MiB)> -q -l -b -v -r -3 -x`
+#### Options
+	1. -u: 用戶名稱
+	2. -p: 密碼
+	3. -c: qBitorrent 的緩存大小
+	4. -q: qBittorrent 版本
+	5. -l: libtorrent 版本
+	6. -b: 安裝autobrr
+	7. -v: 安裝vertex
+	8. -r: 安裝 autoremove-torrents
+	9. -3: 啓動 BBR V3
+	10.-x: 啓動 BBRx 
+#### 範例
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) -u jerry048 -p 1LDw39VOgors -c 3072 -q 4.3.9 -l v1.2.19 -b -v -r -3`
 
-### Tuning.sh 假如你已經安裝了盒子環境 (有機會導致bug，請小心使用)
+##### 解釋
+	1. 用戶名稱 是 jerry048
+	2. 密碼 是 1LDw39VOgors 
+	3. 安裝 qBittorrent 4.3.9 - libtorrent-v1.2.19
+	4. 安裝 autobrr
+	5. 安裝 vertex
+	6. 安裝 autoremove-torrents
+	7. 啓動 BBR V3
+## 支持平台
+	1. 系統
+		1. Debian 10+
+		2. Ubuntu 20.04+
+	
+	2. CPU 架構
+		1. x86_64
+		2. ARM64
 
-`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Tune.sh)`
 ## 功能
-### Install.sh
-###### 1. 安裝盒子環境
-	BitTorrent 客戶端
-		1.優化版qBittorrent
-		2.優化版Deluge
-	Autoremove-torrents
+###### 1. 盒子環境
+	1.qBittorrent
+	2.autobrr
+	3.vertex
+	4.autoremove-torrents
 ###### 2. 優化
 	處理器優化
-		1.Tuned
 	網絡優化
-		1.網卡優化
-		2.ifconfig
-		3.ip route
-	内核參數
-		1./proc/sys/kernel/
-		2./proc/sys/fs/
-		3./proc/sys/vm
-		4./proc/sys/net/core
-		5./proc/sys/net/ipv4/
+	内核參數調配
 	硬盤優化
-		1.I/O Scheduler
-		2.File Open Limit
-	魔改 BBR
-### Tuning.sh
-###### 優化選擇:
-	1. Deluge Libtorrent 優化 (只能用在Libtorrent 1.1.14 并且需要先安裝 ltconfig 插件)
-	2. 系統優化
-		處理器優化
-		網絡優化
-		内核數據
-		硬盤優化
-	3. 魔改 BBR 安裝
-	4. 設置開機自動優化的脚本
+	BBR V3 或 BBRx
 ### 進階優化備注
 - 緩存大小應該設置在機器内存大小的 1/4 左右. 假如你使用的是qBittorrent 4.3.x, 你需要考慮到内存溢出的問題并且設置緩存大小在機器内存大小的 1/8. 
 

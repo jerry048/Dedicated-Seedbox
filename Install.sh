@@ -276,7 +276,7 @@ if [[ ! -z "$bbrx_install" ]]; then
 	if [[ ! -z "$(lsmod | grep bbrx)" ]]; then
 		warn echo "Tweaked BBR is already installed"
 	else
-		install_ install_bbrx_ "Installing BBRx" "BBRx is installed" "/tmp/bbrx_error" bbrx_install_success
+		install_ install_bbrx_ "Installing BBRx" "/tmp/bbrx_error" bbrx_install_success
 	fi
 fi
 
