@@ -88,7 +88,7 @@ if [[ "$OS" =~ "Ubuntu" ]]; then #Ubuntu 20.04+ are supported
 fi
 
 ## Read input arguments
-while getopts "u:p:c:q:l:r:b:v:x:3:h" opt; do
+while getopts "u:p:c:q:l:rbvx3h" opt; do
   case ${opt} in
 	u ) # process option username
 		username=${OPTARG}
