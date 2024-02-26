@@ -20,7 +20,7 @@ fi
 trap BLA::stop_loading_animation SIGINT
 
 ## Install function
-install_()
+install_() {
 info_2 "$2"
 BLA::start_loading_animation "${BLA_classic[@]}"
 $1 1> /dev/null 2> 3
@@ -31,6 +31,7 @@ else
 		$4 = 1
 fi
 BLA::stop_loading_animation
+}
 
 ## Installation environment Check
 info "Checking Installation Environment"
