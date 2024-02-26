@@ -1,15 +1,6 @@
 #!/bin/sh
 tput sgr0; clear
 
-## Load text colors and styles
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/tput.sh)
-# Check if text color settings is successfully loaded
-if [ $? -ne 0 ]; then
-	tput sgr0; tput setaf 1; tput bold; echo "Component ~Text color~ failed to load"; tput sgr0
-	tput sgr0; tput setaf 1; tput bold; echo "Check connection with GitHub"; tput sgr0
-	exit 1
-fi
-
 ## Load Seedbox Components
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
 # Check if Seedbox Components is successfully loaded
