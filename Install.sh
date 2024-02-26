@@ -22,12 +22,6 @@ trap BLA::stop_loading_animation SIGINT
 
 ## Install function
 install_() {
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
-# Check if Seedbox Components is successfully loaded
-if [ $? -ne 0 ]; then
-	fail "Component ~Seedbox Components~ failed to load"
-	fail_exit "Check connection with GitHub"
-fi
 info_2 "$2"
 BLA::start_loading_animation "${BLA_classic[@]}"
 $1 1> /dev/null 2> 3
