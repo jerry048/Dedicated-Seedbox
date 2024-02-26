@@ -114,10 +114,10 @@ while getopts "u:p:c:q:l:r:b:v:x:3:h" opt; do
 		;;
 	q ) # process option cache
 		qb_install=1
-		qb_ver=${OPTARG}
+		qb_ver=("qBittorrent ${OPTARG}")
 		;;
 	l ) # process option libtorrent
-		lib_ver=${OPTARG}
+		lib_ver=("libtorrent-${OPTARG}")
 		#Check if qBittorrent version is specified
 		if [ -z "$qb_ver" ]; then
 			warn "You must choose a qBittorrent version for your libtorrent install"
@@ -150,7 +150,7 @@ while getopts "u:p:c:q:l:r:b:v:x:3:h" opt; do
 	\? ) 
 		info "Help:"
 		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -q <qBittorrent Version> -l <libtorrent Version> -r -brr -v -x -3"
-		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l 1.2.14 -r -b -v -x"
+		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l v.1.2.19 -r -b -v -x"
 		exit 1
 		;;
 	esac
