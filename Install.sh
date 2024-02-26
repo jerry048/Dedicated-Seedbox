@@ -1,106 +1,308 @@
 #!/bin/sh
-
 tput sgr0; clear
 
-## Load text color settings
+## Load text colors and styles
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/tput.sh)
-
-## Allow user to decide whether they would like to install a component or not
-function Decision {
-	while true; do
-		need_input; read -p "Do you wish to install $1? (Y/N):" yn; normal_1
-		case $yn in
-			[Yy]* ) echo "Installing $1"; $1; break;;
-			[Nn]* ) echo "Skipping"; break;;
-			* ) warn_1; echo "Please answer yes or no."; normal_2;;
-		esac
-	done
-}
-
-
-## Check Root Privilege since this script requires root privilege
-if [ $(id -u) -ne 0 ]; then 
-    warn_1; echo  "This script needs root permission to run"; normal_4 
-    exit 1 
-fi
-
-
-## Check Linux Distro since only Debian 10/11 is supported
-distro_codename="$(source /etc/os-release && printf "%s" "${VERSION_CODENAME}")"
-if [[ $distro_codename != buster ]] && [[ $distro_codename != bullseye ]] ; then
-	warn_1; echo "Only Debian 10/11 is supported"; normal_4
+# Check if text color settings is successfully loaded
+if [ $? -ne 0 ]; then
+	tput sgr0; tput setaf 1; tput bold; echo "Component ~Text color~ failed to load"; tput sgr0
+	tput sgr0; tput setaf 1; tput bold; echo "Check connection with GitHub"; tput sgr0
 	exit 1
 fi
 
-
-## Check Virtual Environment since some of the tunning might not work on virtual machine
-systemd-detect-virt > /dev/null
-if [ $? -eq 0 ]; then
-	warn_1; echo "Virtualization is detected, part of the script might not run"; normal_4
+## Load Seedbox Components
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
+# Check if Seedbox Components is successfully loaded
+if [ $? -ne 0 ]; then
+	fail "Component ~Seedbox Components~ failed to load"
+	fail_exit "Check connection with GitHub"
 fi
 
+## Load loading animation
+source <(wget -qO- https://raw.githubusercontent.com/Silejonu/bash_loading_animations/main/bash_loading_animations.sh)
+# Check if bash loading animation is successfully loaded
+if [ $? -ne 0 ]; then
+	fail "Component ~Bash loading animation~ failed to load"
+	fail_exit "Check connection with GitHub"
+fi
+# Run BLA::stop_loading_animation if the script is interrupted
+trap BLA::stop_loading_animation SIGINT
 
-## Grabing the informations to be used for BitTorrent client setup
-username=$1
-password=$2
-cache=$3
+## Install function
+install_()
+info_2 "$2"
+BLA::start_loading_animation "${BLA_classic[@]}"
+$1 1> /dev/null 2> 3
+if [ $? -ne 0 ]; then
+        fail_3 "FAIL"
+else
+        info_3 "Successful"
+		$4 = 1
+fi
+BLA::stop_loading_animation
 
-#Converting the cache size to Deluge's unit  (16KiB)
-Cache_de=$(expr $cache \* 64)
-#Converting the cache to qBittorrent's unit (MiB)
-Cache_qB=$cache
-
-
-## Check existence of input argument in a Bash shell script
-
-#Check if user fill in all the required variables
-if [ -z "$3" ]
-  then
-    warn_1; echo "Please fill in all 3 arguments accordingly: <Username> <Password> <Cache Size(unit:MiB)>"; normal_4
-    exit 1
+## Installation environment Check
+info "Checking Installation Environment"
+# Check Root Privilege
+if [ $(id -u) -ne 0 ]; then 
+    fail_exit "This script needs root permission to run"
 fi
 
-#Preventing user from filling in float number as it would make converting the cache size to deluge be difficult
-re='^[0-9]+$'
-if ! [[ $3 =~ $re ]] ; then
-   warn_1; echo "Cache Size has to be an integer"; normal_4
-   exit 1
+# Linux Distro Version check
+if [ -f /etc/os-release ]; then
+	. /etc/os-release
+	OS=$NAME
+	VER=$VERSION_ID
+elif type lsb_release >/dev/null 2>&1; then
+	OS=$(lsb_release -si)
+	VER=$(lsb_release -sr)
+elif [ -f /etc/lsb-release ]; then
+	. /etc/lsb-release
+	OS=$DISTRIB_ID
+	VER=$DISTRIB_RELEASE
+elif [ -f /etc/debian_version ]; then
+	OS=Debian
+	VER=$(cat /etc/debian_version)
+elif [ -f /etc/SuSe-release ]; then
+	OS=SuSe
+elif [ -f /etc/redhat-release ]; then
+	OS=Redhat
+else
+	OS=$(uname -s)
+	VER=$(uname -r)
 fi
 
+if [[ ! "$OS" =~ "Debian" ]] && [[ ! "$OS" =~ "Ubuntu" ]]; then	#Only Debian and Ubuntu are supported
+	fail "$OS $VER is not supported"
+	info "Only Debian 10+ and Ubuntu 20.04+ are supported"
+	exit 1
+fi
 
-## Creating User to contain the soon to be installed clients
-warn_2
-pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
-useradd -m -p "$pass" "$username"
-normal_2
+if [[ "$OS" =~ "Debian" ]]; then	#Debian 10+ are supported
+	if [[ ! "$VER" =~ "10" ]] && [[ ! "$VER" =~ "11" ]] && [[ ! "$VER" =~ "12" ]]; then
+		fail "$OS $VER is not supported"
+		info "Only Debian 10+ are supported"
+		exit 1
+	fi
+fi
+
+if [[ "$OS" =~ "Ubuntu" ]]; then #Ubuntu 20.04+ are supported
+	if [[ ! "$VER" =~ "20" ]] && [[ ! "$VER" =~ "22" ]] && [[ ! "$VER" =~ "23" ]]; then
+		fail "$OS $VER is not supported"
+		info "Only Ubuntu 20.04+ is supported"
+		exit 1
+	fi
+fi
+
+## Read input arguments
+while getopts ":u:p:c:qb:lib:autoremove:autobrr:vertex:bbrx:bbrv3:h" opt; do
+  case ${opt} in
+	u ) # process option username
+		username=${OPTARG}
+		;;
+	p ) # process option password
+		password=${OPTARG}
+		;;
+	c ) # process option cache
+		cache=${OPTARG}
+		#Check if cache is a number
+		while true
+		do
+			if ! [[ "$cache" =~ ^[0-9]+$ ]]; then
+				warn "Cache must be a number"
+				need_input "Please enter a cache size (in MB):"
+				read cache
+			else
+				break
+			fi
+		done
+		#Converting the cache to qBittorrent's unit (MiB)
+		qb_cache=$cache
+		;;
+	qb ) # process option qBittorrent
+		qb_install=1
+		qb_ver=${OPTARG}
+		;;
+	lib ) # process option libtorrent
+		lib_ver=${OPTARG}
+		#Check if qBittorrent version is specified
+		if [ -z "$qb_ver" ]; then
+			warn "You must choose a qBittorrent version for your libtorrent install"
+			qb_ver_choose
+		fi
+		;;
+	autoremove ) # process option autoremove
+		autoremove_install=1
+		;;
+	autobrr ) # process option autobrr
+		autobrr_install=1
+		;;
+	vertex ) # process option vertex
+		vertex_install=1
+		;;
+	bbrx ) # process option bbr
+		unset bbrv3_install
+		bbrx_install=1	  
+		;;
+	bbrv3 ) # process option bbr
+		unset bbrx_install
+		bbrv3_install=1
+		;;
+	h ) # process option h
+		info "Help:"
+		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -qb <qBittorrent Version> -lib <libtorrent Version> -autoremove -autobrr -vertex -bbrx -bbrv3"
+		info_2 "Example: ./seedbox_installation.sh -u jerry048 -p KsY64P1T -c 1024 -qb 4.3.9 -lib v1.2.19 -autoremove -autobrr -vertex -bbrx"
+		exit 0
+		;;
+	esac
+done
 
 
 ## Install Seedbox Environment
 tput sgr0; clear
-normal_1; echo "Start Installing Seedbox Environment"; warn_2
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
-Update
-Decision qBittorrent
-Decision Deluge
-Decision autoremove-torrents
+info "Start Installing Seedbox Environment"
+echo -e "\n"
+# System Update & Dependencies Install
+install_ update "Updating System" "System is updated" "System update failed. Please consult the log file at /tmp/update_error" "/tmp/update_error" update_success
+
+# qBittorrent
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Torrent%20Clients/qBittorrent/qBittorrent_install.sh)
+# Check if qBittorrent install is successfully loaded
+if [ $? -ne 0 ]; then
+	fail_exit "Component ~qBittorrent install~ failed to load"
+fi
+
+if [[ ! -z "$qb_install" ]]; then
+	## Check if all the required arguments are specified
+	#Check if username is specified
+	if [ -z "$username" ]; then
+		warn "Username is not specified"
+		need_input "Please enter a username:"
+		read username
+	fi
+	#Check if password is specified
+	if [ -z "$password" ]; then
+		warn "Password is not specified"
+		need_input "Please enter a password:"
+		read password
+	fi
+	#Check if cache is specified
+	if [ -z "$cache" ]; then
+		warn "Cache is not specified"
+		need_input "Please enter a cache size (in MB):"
+		read cache
+		#Check if cache is a number
+		while true
+		do
+			if ! [[ "$cache" =~ ^[0-9]+$ ]]; then
+				warn "Cache must be a number"
+				need_input "Please enter a cache size (in MB):"
+				read cache
+			else
+				break
+			fi
+		done
+		qb_cache=$cache
+	fi
+	#Check if qBittorrent version is specified
+	if [ -z "$qb_ver" ]; then
+		warn "qBittorrent version is not specified"
+		qb_ver_check
+	fi
+	#Check if libtorrent version is specified
+	if [ -z "$lib_ver" ]; then
+		warn "libtorrent version is not specified"
+		lib_ver_check
+	fi
+	qb_port=8080
+	qb_incoming_port=45000
+
+	## qBittorrent & libtorrent compatibility check
+	qb_install_check
+
+	## qBittorrent install
+	install_ "install_qBittorrent_ $username $password $qb_ver $lib_ver $qb_cache $qb_port $qb_incoming_port" "Installing qBittorrent" "/tmp/qb_error" qb_install_success
+fi
+
+# autobrr Install
+if [[ ! -z "$autobrr_install" ]]; then
+	install_ install_autobrr_ "Installing autobrr" "/tmp/autobrr_error" autobrr_install_success
+fi
+
+# vertex Install
+if [[ ! -z "$vertex_install" ]]; then
+	install_ install_vertex_ "Installing vertex" "/tmp/vertex_error" vertex_install_success
+fi
+
+# autoremove-torrents Install
+if [[ ! -z "$autoremove_install" ]]; then
+	install_ install_autoremove-torrents_ "Installing autoremove-torrents" "/tmp/autoremove_error" autoremove_install_success
+fi
+
+sperator
+
+## Tunning
+info "Start Doing System Tunning"
+install_ tuned_ "Installing tuned" "/tmp/tuned_error" tuned_success
+install_ set_txqueuelen_ "Setting txqueuelen" "/tmp/txqueuelen_error" txqueuelen_success
+install_ set_file_open_limit_ "Setting File Open Limit" "/tmp/file_open_limit_error" file_open_limit_success
+
+# Check for Virtual Environment since some of the tunning might not work on virtual machine
+systemd-detect-virt > /dev/null
+if [ $? -eq 0 ]; then
+	warn "Virtualization is detected, skipping some of the tunning"
+	install_ disable_tso_ "Disabling TSO" "/tmp/tso_error" tso_success
+else
+	install_ set_disk_scheduler_ "Setting Disk Scheduler" "/tmp/disk_scheduler_error" disk_scheduler_success
+	install_ set_ring_buffer_ "Setting Ring Buffer" "/tmp/ring_buffer_error" ring_buffer_success
+fi
+# Check for LXC since some of the tunning might not work on LXC
+lxc-checknamespace -n > /dev/null
+if [ $? -eq 0 ]; then
+	warn "LXC is detected, skipping some of the tunning"
+	warn "Much of the kernel setting will not take effect"
+else
+	install_ set_initial_congestion_window_ "Setting Initial Congestion Window" "/tmp/initial_congestion_window_error" initial_congestion_window_success
+fi
+	install_ kernel_settings_ "Setting Kernel Settings" "/tmp/kernel_settings_error" kernel_settings_success
 
 
-## Tweaking
-tput sgr0; clear
-normal_1; echo "Start Doing System Tweak"; warn_2
-source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/tweaking.sh)
-CPU_Tweaking
-NIC_Tweaking
-Network_Other_Tweaking
-Scheduler_Tweaking
-file_open_limit_Tweaking
-kernel_Tweaking
-Decision Tweaked_BBR
+
+# BBRx
+if [[ ! -z "$bbrx_install" ]]; then
+	# Check if Tweaked BBR is already installed
+	if [[ ! -z "$(lsmod | grep bbrx)" ]]; then
+		warn echo "Tweaked BBR is already installed"
+	else
+		install_ install_bbrx_ "Installing BBRx" "BBRx is installed" "/tmp/bbrx_error" bbrx_install_success
+	fi
+fi
+
+# BBRv3
+if [[ ! -z "$bbrv3_install" ]]; then
+	install_ install_bbrv3_ "Installing BBRv3" "/tmp/bbrv3_error" bbrv3_install_success
+fi
 
 ## Configue Boot Script
-tput sgr0; clear
-normal_1; echo "Start Configuing Boot Script"
-wget https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Miscellaneous/.boot-script.sh && chmod +x .boot-script.sh
+info "Start Configuing Boot Script"
+touch /root/.boot-script.sh && chmod +x /root/.boot-script.sh
+cat << EOF > /root/.boot-script.sh
+#!/bin/bash
+systemd-detect-virt > /dev/null
+if [ $? -eq 0 ]; then
+
+else
+
+fi
+# Check for LXC since some of the tunning might not work on LXC
+lxc-checknamespace -n > /dev/null
+if [ $? -eq 0 ]; then
+else
+	install_ set_initial_congestion_window_ "Setting Initial Congestion Window" "/tmp/initial_congestion_window_error" initial_congestion_window_success
+fi
+
+EOF
+# Configure the script to run during system startup
 cat << EOF > /etc/systemd/system/boot-script.service
 [Unit]
 Description=boot-script
@@ -115,10 +317,46 @@ RemainAfterExit=true
 WantedBy=multi-user.target
 EOF
     systemctl enable boot-script.service
-tput sgr0; clear
 
-normal_1; echo "Seedbox Installation Complete"
+
+## Finalizing the install
+tput sgr0; clear
+info "Seedbox Installation Complete"
 publicip=$(curl https://ipinfo.io/ip)
-[[ ! -z "$qbport" ]] && echo "qBittorrent $version is successfully installed, visit at $publicip:$qbport"
-[[ ! -z "$deport" ]] && echo "Deluge $Deluge_Ver is successfully installed, visit at $publicip:$dewebport"
-[[ ! -z "$bbrx" ]] && echo "Tweaked BBR is successfully installed, please reboot for it to take effect"
+
+# Display Username and Password
+# qBittorrent
+if [[ ! -z "$qb_install_success" ]]; then
+	info "qBittorrent installed"
+	boring_text "qBittorrent WebUI: http://$publicip:8080"
+	boring_text "qBittorrent Username: $username"
+	boring_text "qBittorrent Password: $password"
+fi
+# autoremove-torrents
+if [[ ! -z "$autoremove_install_success" ]]; then
+	info "autoremove-torrents installed"
+	boring_text "Please read https://autoremove-torrents.readthedocs.io/en/latest/config.html for configuration"
+fi
+# autobrr
+if [[ ! -z "$autobrr_install_success" ]]; then
+	info "autobrr installed"
+	boring_text "autobrr WebUI: http://$publicip:7474"
+fi
+# vertex
+if [[ ! -z "$vertex_install_success" ]]; then
+	info "vertex installed"
+	boring_text "vertex WebUI: http://$publicip:3000"
+	boring_text "vertex Username: $username"
+	boring_text "vertex Password: $password"
+fi
+# BBR
+if [[ ! -z "$bbrx_install_success" ]]; then
+	info "BBRx successfully installed, please reboot for it to take effect"
+fi
+
+if [[ ! -z "$bbrv3_install_success" ]]; then
+	info "BBRv3 successfully installed, please reboot for it to take effect"
+fi
+
+exit 0
+
