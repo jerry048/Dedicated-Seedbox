@@ -114,7 +114,7 @@ while getopts "u:p:c:q:l:r:b:v:x:3:h" opt; do
 		;;
 	q ) # process option cache
 		qb_install=1
-		qb_ver=("qBittorrent ${OPTARG}")
+		qb_ver=("qBittorrent-${OPTARG}")
 		;;
 	l ) # process option libtorrent
 		lib_ver=("libtorrent-${OPTARG}")
@@ -185,6 +185,17 @@ if [[ ! -z "$qb_install" ]]; then
 		need_input "Please enter a password:"
 		read password
 	fi
+	## Create user if it does not exist
+	if ! id -u $username > /dev/null 2>&1; then
+		warn "User $username does not exist. Creating it now..."
+		useradd -m -s /bin/bash $username
+		# Check if the user is created successfully
+		if [ $? -ne 0 ]; then
+			warn "Failed to create user $username"
+			return 1
+		fi
+	fi
+	chown -R $username:$username /home/$username
 	#Check if cache is specified
 	if [ -z "$cache" ]; then
 		warn "Cache is not specified"
