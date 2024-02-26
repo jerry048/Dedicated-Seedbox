@@ -24,12 +24,12 @@ trap BLA::stop_loading_animation SIGINT
 install_() {
 info_2 "$2"
 BLA::start_loading_animation "${BLA_classic[@]}"
-$1 1> /dev/null 2> 3
+$1 1> /dev/null 2> $3
 if [ $? -ne 0 ]; then
-	fail_3 "FAIL"
+	fail_3 "FAIL" 
 else
 	info_3 "Successful"
-	$4=1
+	export $4=1
 fi
 BLA::stop_loading_animation
 }
@@ -249,7 +249,7 @@ if [[ ! -z "$autoremove_install" ]]; then
 	install_ install_autoremove-torrents_ "Installing autoremove-torrents" "/tmp/autoremove_error" autoremove_install_success
 fi
 
-sperator
+seperator
 
 ## Tunning
 info "Start Doing System Tunning"
