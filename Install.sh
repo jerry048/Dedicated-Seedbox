@@ -88,7 +88,7 @@ if [[ "$OS" =~ "Ubuntu" ]]; then #Ubuntu 20.04+ are supported
 fi
 
 ## Read input arguments
-while getopts ":u:p:c:qb:lib:autoremove:autobrr:vertex:bbrx:bbrv3:h" opt; do
+while getopts "u:p:c:q:l:r:b:v:x:3:h" opt; do
   case ${opt} in
 	u ) # process option username
 		username=${OPTARG}
@@ -112,11 +112,11 @@ while getopts ":u:p:c:qb:lib:autoremove:autobrr:vertex:bbrx:bbrv3:h" opt; do
 		#Converting the cache to qBittorrent's unit (MiB)
 		qb_cache=$cache
 		;;
-	qb ) # process option qBittorrent
+	q ) # process option cache
 		qb_install=1
 		qb_ver=${OPTARG}
 		;;
-	lib ) # process option libtorrent
+	l ) # process option libtorrent
 		lib_ver=${OPTARG}
 		#Check if qBittorrent version is specified
 		if [ -z "$qb_ver" ]; then
@@ -124,28 +124,34 @@ while getopts ":u:p:c:qb:lib:autoremove:autobrr:vertex:bbrx:bbrv3:h" opt; do
 			qb_ver_choose
 		fi
 		;;
-	autoremove ) # process option autoremove
+	r ) # process option autoremove
 		autoremove_install=1
 		;;
-	autobrr ) # process option autobrr
+	b ) # process option autobrr
 		autobrr_install=1
 		;;
-	vertex ) # process option vertex
+	v ) # process option vertex
 		vertex_install=1
 		;;
-	bbrx ) # process option bbr
+	x ) # process option bbr
 		unset bbrv3_install
 		bbrx_install=1	  
 		;;
-	bbrv3 ) # process option bbr
+	3 ) # process option bbr
 		unset bbrx_install
 		bbrv3_install=1
 		;;
 	h ) # process option h
 		info "Help:"
-		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -qb <qBittorrent Version> -lib <libtorrent Version> -autoremove -autobrr -vertex -bbrx -bbrv3"
-		info_2 "Example: ./seedbox_installation.sh -u jerry048 -p KsY64P1T -c 1024 -qb 4.3.9 -lib v1.2.19 -autoremove -autobrr -vertex -bbrx"
+		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -q <qBittorrent Version> -l <libtorrent Version> -r -brr -v -x -3"
+		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l 1.2.14 -r -b -v -x"
 		exit 0
+		;;
+	\? ) 
+		info "Help:"
+		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -q <qBittorrent Version> -l <libtorrent Version> -r -brr -v -x -3"
+		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l 1.2.14 -r -b -v -x"
+		exit 1
 		;;
 	esac
 done
