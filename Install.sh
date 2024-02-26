@@ -26,10 +26,10 @@ info_2 "$2"
 BLA::start_loading_animation "${BLA_classic[@]}"
 $1 1> /dev/null 2> 3
 if [ $? -ne 0 ]; then
-        fail_3 "FAIL"
+	fail_3 "FAIL"
 else
-        info_3 "Successful"
-		$4=1
+	info_3 "Successful"
+	$4=1
 fi
 BLA::stop_loading_animation
 }
