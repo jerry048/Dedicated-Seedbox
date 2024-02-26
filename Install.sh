@@ -265,15 +265,8 @@ else
 	install_ set_disk_scheduler_ "Setting Disk Scheduler" "/tmp/disk_scheduler_error" disk_scheduler_success
 	install_ set_ring_buffer_ "Setting Ring Buffer" "/tmp/ring_buffer_error" ring_buffer_success
 fi
-# Check for LXC since some of the tunning might not work on LXC
-lxc-checknamespace -n > /dev/null
-if [ $? -eq 0 ]; then
-	warn "LXC is detected, skipping some of the tunning"
-	warn "Much of the kernel setting will not take effect"
-else
-	install_ set_initial_congestion_window_ "Setting Initial Congestion Window" "/tmp/initial_congestion_window_error" initial_congestion_window_success
-fi
-	install_ kernel_settings_ "Setting Kernel Settings" "/tmp/kernel_settings_error" kernel_settings_success
+install_ set_initial_congestion_window_ "Setting Initial Congestion Window" "/tmp/initial_congestion_window_error" initial_congestion_window_success
+install_ kernel_settings_ "Setting Kernel Settings" "/tmp/kernel_settings_error" kernel_settings_success
 
 
 
@@ -341,16 +334,20 @@ if [[ ! -z "$qb_install_success" ]]; then
 	boring_text "qBittorrent WebUI: http://$publicip:8080"
 	boring_text "qBittorrent Username: $username"
 	boring_text "qBittorrent Password: $password"
+	echo -e "\n"
 fi
 # autoremove-torrents
 if [[ ! -z "$autoremove_install_success" ]]; then
 	info "autoremove-torrents installed"
+	boring_text "Config at /home/$username/.config.yml"
 	boring_text "Please read https://autoremove-torrents.readthedocs.io/en/latest/config.html for configuration"
+	echo -e "\n"
 fi
 # autobrr
 if [[ ! -z "$autobrr_install_success" ]]; then
 	info "autobrr installed"
 	boring_text "autobrr WebUI: http://$publicip:7474"
+	echo -e "\n"
 fi
 # vertex
 if [[ ! -z "$vertex_install_success" ]]; then
@@ -358,6 +355,7 @@ if [[ ! -z "$vertex_install_success" ]]; then
 	boring_text "vertex WebUI: http://$publicip:3000"
 	boring_text "vertex Username: $username"
 	boring_text "vertex Password: $password"
+	echo -e "\n"
 fi
 # BBR
 if [[ ! -z "$bbrx_install_success" ]]; then
