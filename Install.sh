@@ -29,7 +29,7 @@ if [ $? -ne 0 ]; then
         fail_3 "FAIL"
 else
         info_3 "Successful"
-		$4 = 1
+		$4=1
 fi
 BLA::stop_loading_animation
 }
