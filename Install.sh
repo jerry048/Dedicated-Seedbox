@@ -329,10 +329,11 @@ EOF
     systemctl enable boot-script.service
 
 
+seperator
+
 ## Finalizing the install
-tput sgr0; clear
 info "Seedbox Installation Complete"
-publicip=$(curl https://ipinfo.io/ip)
+publicip=$(curl -s https://ipinfo.io/ip)
 
 # Display Username and Password
 # qBittorrent
