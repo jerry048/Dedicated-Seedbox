@@ -88,7 +88,7 @@ if [[ "$OS" =~ "Ubuntu" ]]; then #Ubuntu 20.04+ are supported
 fi
 
 ## Read input arguments
-while getopts "u:p:c:q:l:rbvx3h" opt; do
+while getopts "u:p:c:q:l:rbvx3ph" opt; do
   case ${opt} in
 	u ) # process option username
 		username=${OPTARG}
@@ -141,16 +141,94 @@ while getopts "u:p:c:q:l:rbvx3h" opt; do
 		unset bbrx_install
 		bbrv3_install=1
 		;;
-	h ) # process option h
+	p ) # process option port
+		if [[ -z "$qb_install" ]]; then
+			need_input "Please enter qBittorrent port:"
+			read qb_port
+			while true
+			do
+				if ! [[ "$qb_port" =~ ^[0-9]+$ ]]; then
+					warn "Port must be a number"
+					need_input "Please enter qBittorrent port:"
+					read qb_port
+				else
+					break
+				fi
+			done
+			need_input "Please enter qBittorrent incoming port:"
+			read qb_incoming_port
+			while true
+			do
+				if ! [[ "$qb_incoming_port" =~ ^[0-9]+$ ]]; then
+						warn "Port must be a number"
+						need_input "Please enter qBittorrent incoming port:"
+						read qb_incoming_port
+				else
+					break
+				fi
+			done
+		fi
+		if [[ -z "$autobrr_install" ]]; then
+			need_input "Please enter autobrr port:"
+			read autobrr_port
+			while true
+			do
+				if ! [[ "$autobrr_port" =~ ^[0-9]+$ ]]; then
+					warn "Port must be a number"
+					need_input "Please enter autobrr port:"
+					read autobrr_port
+				else
+					break
+				fi
+			done
+		fi
+		if [[ -z "$vertex_install" ]]; then
+			need_input "Please enter vertex port:"
+			read vertex_port
+			while true
+			do
+				if ! [[ "$vertex_port" =~ ^[0-9]+$ ]]; then
+					warn "Port must be a number"
+					need_input "Please enter vertex port:"
+					read vertex_port
+				else
+					break
+				fi
+			done
+		fi
+		;;
+	h ) # process option help
 		info "Help:"
-		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -q <qBittorrent Version> -l <libtorrent Version> -r -brr -v -x -3"
-		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l 1.2.14 -r -b -v -x"
+		info "Usage: ./Install.sh -u <username> -p <password> -c <Cache Size(unit:MiB)> -q <qBittorrent version> -l <libtorrent version> -b -v -r -3 -x -p"
+		info "Example: ./Install.sh -u jerry048 -p 1LDw39VOgors -c 3072 -q 4.3.9 -l v1.2.19 -b -v -r -3"
+		source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Torrent%20Clients/qBittorrent/qBittorrent_install.sh)
+		seperator
+		info "Options:"
+		need_input "1. -u : Username"
+		need_input "2. -p : Password"
+		need_input "3. -c : Cache Size for qBittorrent (unit:MiB)"
+		echo -e "\n"
+		need_input "4. -q : qBittorrent version"
+		need_input "Available qBittorrent versions:"
+		tput sgr0; tput setaf 7; tput dim; history -p "${qb_ver_list[@]}"; tput sgr0
+		echo -e "\n"
+		need_input "5. -l : libtorrent version"
+		need_input "Available qBittorrent versions:"
+		tput sgr0; tput setaf 7; tput dim; history -p "${lib_ver_list[@]}"; tput sgr0
+		echo -e "\n"
+		need_input "6. -r : Install autoremove-torrents"
+		need_input "7. -b : Install autobrr"
+		need_input "8. -v : Install vertex"
+		need_input "9. -x : Install BBRx"
+		need_input "10. -3 : Install BBRv3"
+		need_input "11. -p : Specify ports for qBittorrent, autobrr and vertex"
+		need_input "12. -h : Display help message"
 		exit 0
 		;;
 	\? ) 
 		info "Help:"
-		info_2 "Usage: ./seedbox_installation.sh -u <Username> -p <Password> -c <Cache Size(unit:MiB)> -q <qBittorrent Version> -l <libtorrent Version> -r -brr -v -x -3"
-		info_2 "Example ./seedbox_installation.sh -u user -p pass -c 1024 -q 4.3.9 -l v.1.2.19 -r -b -v -x"
+		info_2 "Usage: ./Install.sh -u <username> -p <password> -c <Cache Size(unit:MiB)> -q <qBittorrent version> -l <libtorrent version> -b -v -r -3 -x -p"
+		info_2 "Example ./Install.sh -u jerry048 -p 1LDw39VOgors -c 3072 -q 4.3.9 -l v1.2.19 -b -v -r -3"
 		exit 1
 		;;
 	esac
@@ -223,8 +301,16 @@ if [[ ! -z "$qb_install" ]]; then
 		warn "libtorrent version is not specified"
 		lib_ver_check
 	fi
-	qb_port=8080
-	qb_incoming_port=45000
+	#Check if qBittorrent port is specified
+	if [ -z "$qb_port" ]; then
+		warn "qBittorrent port is not specified"
+		qb_port=8080
+	fi
+	#Check if qBittorrent incoming port is specified
+	if [ -z "$qb_incoming_port" ]; then
+		warn "qBittorrent incoming port is not specified"
+		qb_incoming_port=45000
+	fi
 
 	## qBittorrent & libtorrent compatibility check
 	qb_install_check
