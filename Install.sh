@@ -142,7 +142,7 @@ while getopts "u:p:c:q:l:rbvx3oh" opt; do
 		bbrv3_install=1
 		;;
 	o ) # process option port
-		if [[ -z "$qb_install" ]]; then
+		if [[ -n "$qb_install" ]]; then
 			need_input "Please enter qBittorrent port:"
 			read qb_port
 			while true
@@ -168,7 +168,7 @@ while getopts "u:p:c:q:l:rbvx3oh" opt; do
 				fi
 			done
 		fi
-		if [[ -z "$autobrr_install" ]]; then
+		if [[ -n "$autobrr_install" ]]; then
 			need_input "Please enter autobrr port:"
 			read autobrr_port
 			while true
@@ -182,7 +182,7 @@ while getopts "u:p:c:q:l:rbvx3oh" opt; do
 				fi
 			done
 		fi
-		if [[ -z "$vertex_install" ]]; then
+		if [[ -n "$vertex_install" ]]; then
 			need_input "Please enter vertex port:"
 			read vertex_port
 			while true
@@ -303,12 +303,10 @@ if [[ ! -z "$qb_install" ]]; then
 	fi
 	#Check if qBittorrent port is specified
 	if [ -z "$qb_port" ]; then
-		warn "qBittorrent port is not specified"
 		qb_port=8080
 	fi
 	#Check if qBittorrent incoming port is specified
 	if [ -z "$qb_incoming_port" ]; then
-		warn "qBittorrent incoming port is not specified"
 		qb_incoming_port=45000
 	fi
 
