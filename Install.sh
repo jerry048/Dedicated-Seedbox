@@ -415,7 +415,7 @@ publicip=$(curl -s https://ipinfo.io/ip)
 # qBittorrent
 if [[ ! -z "$qb_install_success" ]]; then
 	info "qBittorrent installed"
-	boring_text "qBittorrent WebUI: http://$publicip:8080"
+	boring_text "qBittorrent WebUI: http://$publicip:$qb_port"
 	boring_text "qBittorrent Username: $username"
 	boring_text "qBittorrent Password: $password"
 	echo -e "\n"
@@ -430,13 +430,13 @@ fi
 # autobrr
 if [[ ! -z "$autobrr_install_success" ]]; then
 	info "autobrr installed"
-	boring_text "autobrr WebUI: http://$publicip:7474"
+	boring_text "autobrr WebUI: http://$publicip:$autobrr_port"
 	echo -e "\n"
 fi
 # vertex
 if [[ ! -z "$vertex_install_success" ]]; then
 	info "vertex installed"
-	boring_text "vertex WebUI: http://$publicip:3000"
+	boring_text "vertex WebUI: http://$publicip:$vertex_port"
 	boring_text "vertex Username: $username"
 	boring_text "vertex Password: $password"
 	echo -e "\n"
