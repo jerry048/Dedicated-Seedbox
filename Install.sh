@@ -88,7 +88,7 @@ if [[ "$OS" =~ "Ubuntu" ]]; then #Ubuntu 20.04+ are supported
 fi
 
 ## Read input arguments
-while getopts "u:p:c:q:l:rbvx3ph" opt; do
+while getopts "u:p:c:q:l:rbvx3oh" opt; do
   case ${opt} in
 	u ) # process option username
 		username=${OPTARG}
@@ -141,7 +141,7 @@ while getopts "u:p:c:q:l:rbvx3ph" opt; do
 		unset bbrx_install
 		bbrv3_install=1
 		;;
-	p ) # process option port
+	o ) # process option port
 		if [[ -z "$qb_install" ]]; then
 			need_input "Please enter qBittorrent port:"
 			read qb_port
