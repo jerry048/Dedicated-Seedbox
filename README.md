@@ -4,7 +4,7 @@
 # Seedbox Installation Script
 [中文Readme](https://github.com/jerry048/Dedicated-Seedbox/blob/main/README-zh.md)
 ## Usage
-`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) -u <username> -p <password> -c <Cache Size(unit:MiB)> -q -l -b -v -r -3 -x`
+`bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) -u <username> -p <password> -c <Cache Size(unit:MiB)> -q -l -b -v -r -3 -x -o`
 #### Options
 	1. -u: username 
 	2. -p: password
@@ -15,18 +15,20 @@
 	7. -v: Install vertex
 	8. -r: Install autoremove-torrents
 	9. -3: Enable BBR V3
-	10.-x: Enable BBRx 
+	10.-x: Enable BBRx
+	11. Customize ports
 #### Example
 `bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) -u jerry048 -p 1LDw39VOgors -c 3072 -q 4.3.9 -l v1.2.19 -b -v -r -3`
 
 ##### Explanation
 	1. username is jerry048
 	2. password is 1LDw39VOgors 
-	3. Install qBittorrent 4.3.9 - libtorrent-v1.2.19
-	4. Install autobrr
-	5. Install vertex
-	6. Install autoremove-torrents
-	7. Enable BBR V3
+	3. Cache size is 3GB
+	4. Install qBittorrent 4.3.9 - libtorrent-v1.2.19
+	5. Install autobrr
+	6. Install vertex
+	7. Install autoremove-torrents
+	8. Enable BBR V3
 ## Supported Platform
 	1. OS
 		1. Debian 10+
