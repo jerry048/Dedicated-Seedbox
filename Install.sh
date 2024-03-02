@@ -234,13 +234,15 @@ while getopts "u:p:c:q:l:rbvx3oh" opt; do
 	esac
 done
 
+# System Update & Dependencies Install
+info "Start System Update & Dependencies Install"
+update
 
 ## Install Seedbox Environment
 tput sgr0; clear
 info "Start Installing Seedbox Environment"
 echo -e "\n"
-# System Update & Dependencies Install
-install_ update "Updating System" "/tmp/update_error" update_success
+
 
 # qBittorrent
 source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/Torrent%20Clients/qBittorrent/qBittorrent_install.sh)
