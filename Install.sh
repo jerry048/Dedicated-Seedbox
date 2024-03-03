@@ -376,19 +376,22 @@ info "Start Configuing Boot Script"
 touch /root/.boot-script.sh && chmod +x /root/.boot-script.sh
 cat << EOF > /root/.boot-script.sh
 #!/bin/bash
+sleep 120s
+source <(wget -qO- https://raw.githubusercontent.com/jerry048/Seedbox-Components/main/seedbox_installation.sh)
+# Check if Seedbox Components is successfully loaded
+if [ \$? -ne 0 ]; then
+	exit 1
+fi
+set_txqueuelen_
+# Check for Virtual Environment since some of the tunning might not work on virtual machine
 systemd-detect-virt > /dev/null
-if [ $? -eq 0 ]; then
-
+if [ \$? -eq 0 ]; then
+	disable_tso_
 else
-
+	set_disk_scheduler_
+	set_ring_buffer_
 fi
-# Check for LXC since some of the tunning might not work on LXC
-lxc-checknamespace -n > /dev/null
-if [ $? -eq 0 ]; then
-else
-	install_ set_initial_congestion_window_ "Setting Initial Congestion Window" "/tmp/initial_congestion_window_error" initial_congestion_window_success
-fi
-
+set_initial_congestion_window_
 EOF
 # Configure the script to run during system startup
 cat << EOF > /etc/systemd/system/boot-script.service
