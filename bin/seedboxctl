@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+_seedboxctl_entrypoint_dir() {
+  local source_path="${BASH_SOURCE[0]}" source_dir link_target
+  while [[ -L "${source_path}" ]]; do
+    source_dir="$(cd -P -- "$(dirname -- "${source_path}")" && pwd -P)"
+    link_target="$(readlink -- "${source_path}")"
+    if [[ "${link_target}" == /* ]]; then
+      source_path="${link_target}"
+    else
+      source_path="${source_dir}/${link_target}"
+    fi
+  done
+  cd -P -- "$(dirname -- "${source_path}")" && pwd -P
+}
+
+_seedboxctl_entrypoint() {
+  local script_dir
+  script_dir="$(_seedboxctl_entrypoint_dir)"
+  export SEEDBOX_ROOT="$(cd -- "${script_dir}/.." && pwd -P)"
+  source "${SEEDBOX_ROOT}/lib/core/bootstrap.bash"
+  seedbox::bootstrap "$@"
+}
+
+_seedboxctl_entrypoint "$@"
