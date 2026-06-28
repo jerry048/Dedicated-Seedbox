@@ -17,9 +17,9 @@ autobrr::usage() {
   seedboxctl autobrr status --user 用户名
 
 安全说明：
-  如果资源 URL 符合 GitHub release 命名规则，seedboxctl 会自动下载匹配的 checksums.txt。
+  如果资源 URL 符合 GitHub release 命名规则，seedboxctl 会自动下载匹配的 checksums.txt；失败时回退到 GitHub release API 的资源 digest。
   仅在自定义或非标准 URL 时传入 --autobrr-sha256。无法解析校验和时，必须显式传入 --allow-unverified-downloads。
-  如果省略 --autobrr-url，会通过 GitHub release API 自动发现最新 Linux 资源。
+  如果省略 --autobrr-url，会通过 GitHub release API 自动发现最新 Linux tar.gz 资源。
 USAGE
   else
     cat <<'USAGE'
@@ -30,9 +30,9 @@ Usage:
   seedboxctl autobrr status --user USER
 
 Security:
-  seedboxctl automatically downloads the matching autobrr release checksums.txt file when the asset URL follows GitHub release naming.
+  seedboxctl automatically downloads the matching autobrr release checksums.txt file when the asset URL follows GitHub release naming; if that fails, it falls back to the asset digest from GitHub's release API.
   Provide --autobrr-sha256 only for custom/non-standard URLs. Without a resolved checksum, pass --allow-unverified-downloads explicitly.
-  If --autobrr-url is omitted, the latest Linux asset URL is discovered through GitHub's release API.
+  If --autobrr-url is omitted, the latest Linux tar.gz asset URL is discovered through GitHub's release API.
 USAGE
   fi
 }
@@ -68,24 +68,45 @@ autobrr::load_args() {
   if args::has allow_unverified_downloads; then SEEDBOX_ALLOW_UNVERIFIED_DOWNLOADS=1; fi
 }
 
-autobrr::asset_arch_pattern() {
+autobrr::asset_arch_patterns() {
   detect::load_arch
   case "${SEEDBOX_ARCH}" in
-    amd64) printf 'linux_x86_64' ;;
-    arm64) printf 'linux_arm64' ;;
+    # autobrr's tarball uses x86_64, while its Linux packages use amd64.
+    # Keep amd64 as a fallback for future/alternate release naming.
+    amd64) printf '%s\n' linux_x86_64 linux_amd64 ;;
+    # autobrr currently publishes linux_arm64.tar.gz. Accept aarch64 too so
+    # custom/mirrored release URLs can still resolve on 64-bit ARM systems.
+    arm64) printf '%s\n' linux_arm64 linux_aarch64 ;;
     *) return 1 ;;
   esac
 }
 
+autobrr::asset_arch_pattern() {
+  autobrr::asset_arch_patterns | head -n1
+}
+
+autobrr::asset_name_from_url() {
+  local url="$1"
+  url="${url%%\?*}"
+  url="${url%%#*}"
+  printf '%s\n' "${url##*/}"
+}
+
 autobrr::discover_latest_url() {
-  local pattern
-  pattern="$(autobrr::asset_arch_pattern)"
-  curl -fsSL "${SEEDBOX_AUTOBRR_API}" \
-    | grep 'browser_download_url' \
-    | grep "${pattern}" \
-    | grep '\.tar\.gz' \
-    | head -n1 \
-    | cut -d '"' -f4
+  local patterns
+  patterns="$(autobrr::asset_arch_patterns)" || return 1
+  curl -fsSL "${SEEDBOX_AUTOBRR_API}" | awk -v patterns="${patterns}" '
+    BEGIN { n = split(patterns, pat, "\n") }
+    /"browser_download_url"[[:space:]]*:/ {
+      url = $0
+      sub(/^.*"browser_download_url"[[:space:]]*:[[:space:]]*"/, "", url)
+      sub(/"[[:space:],}]*$/, "", url)
+      if (url !~ /[.]tar[.]gz$/) next
+      for (i = 1; i <= n; i++) {
+        if (pat[i] != "" && index(url, pat[i])) { print url; exit }
+      }
+    }
+  '
 }
 
 
@@ -101,12 +122,22 @@ autobrr::download_text() {
   fi
 }
 
+autobrr::normalize_sha256() {
+  local sha="$1"
+  sha="${sha#sha256:}"
+  sha="${sha#SHA256:}"
+  sha="$(printf '%s' "${sha}" | tr '[:upper:]' '[:lower:]')"
+  [[ "${sha}" =~ ^[a-f0-9]{64}$ ]] || return 1
+  printf '%s\n' "${sha}"
+}
+
 autobrr::checksum_url_for_asset() {
   local url="$1" asset release_dir version
   url="${url%%\?*}"
+  url="${url%%#*}"
   asset="${url##*/}"
   release_dir="${url%/*}"
-  if [[ "${asset}" =~ ^autobrr_([0-9]+(\.[0-9]+){1,3})_.*\.tar\.gz$ ]]; then
+  if [[ "${asset}" =~ ^autobrr_v?([0-9]+(\.[0-9]+){1,3}([-+][A-Za-z0-9._-]+)?)_.*[.]tar[.]gz$ ]]; then
     version="${BASH_REMATCH[1]}"
     printf '%s/autobrr_%s_checksums.txt\n' "${release_dir}" "${version}"
     return 0
@@ -114,12 +145,55 @@ autobrr::checksum_url_for_asset() {
   return 1
 }
 
-autobrr::resolve_sha256() {
-  local url="$1" checksum_url tmp asset sha
-  if [[ -n "${AB_SHA256}" && "${AB_SHA256}" != "auto" ]]; then
-    printf '%s\n' "${AB_SHA256}"
+autobrr::github_api_url_for_asset() {
+  local url="$1"
+  url="${url%%\?*}"
+  url="${url%%#*}"
+  if [[ "${url}" =~ ^https://github[.]com/([^/]+)/([^/]+)/releases/download/([^/]+)/[^/]+$ ]]; then
+    printf 'https://api.github.com/repos/%s/%s/releases/tags/%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
     return 0
   fi
+  if [[ "${url}" =~ ^https://github[.]com/([^/]+)/([^/]+)/releases/latest/download/[^/]+$ ]]; then
+    printf 'https://api.github.com/repos/%s/%s/releases/latest\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+    return 0
+  fi
+  return 1
+}
+
+autobrr::resolve_sha256_from_github_api() {
+  local url="$1" api tmp asset sha
+  api="$(autobrr::github_api_url_for_asset "${url}" || true)"
+  [[ -n "${api}" ]] || return 1
+  asset="$(autobrr::asset_name_from_url "${url}")"
+  tmp="$(mktemp /tmp/autobrr.release.XXXXXX)"
+  if ! autobrr::download_text "${api}" "${tmp}"; then
+    rm -f -- "${tmp}"
+    return 1
+  fi
+  sha="$(awk -v asset="${asset}" '
+    function json_string_value(line, value) {
+      value = line
+      sub(/^[^:]*:[[:space:]]*"/, "", value)
+      sub(/",?[[:space:]]*$/, "", value)
+      return value
+    }
+    /"name"[[:space:]]*:/ {
+      name = json_string_value($0)
+      in_asset = (name == asset)
+      next
+    }
+    in_asset && /"digest"[[:space:]]*:/ {
+      digest = json_string_value($0)
+      sub(/^sha256:/, "", digest)
+      if (length(digest) == 64 && digest ~ /^[A-Fa-f0-9]+$/) { print tolower(digest); exit }
+    }
+  ' "${tmp}")"
+  rm -f -- "${tmp}"
+  autobrr::normalize_sha256 "${sha}" || return 1
+}
+
+autobrr::resolve_sha256_from_checksums() {
+  local url="$1" checksum_url tmp asset sha
   checksum_url="$(autobrr::checksum_url_for_asset "${url}" || true)"
   [[ -n "${checksum_url}" ]] || return 1
   tmp="$(mktemp /tmp/autobrr.checksums.XXXXXX)"
@@ -127,17 +201,38 @@ autobrr::resolve_sha256() {
     rm -f -- "${tmp}"
     return 1
   fi
-  asset="${url%%\?*}"
-  asset="${asset##*/}"
+  asset="$(autobrr::asset_name_from_url "${url}")"
   sha="$(awk -v asset="${asset}" '
-    index($0, asset) {
+    {
+      asset_seen = 0
+      sha = ""
       for (i = 1; i <= NF; i++) {
-        if ($i ~ /^[A-Fa-f0-9]{64}$/) { print tolower($i); exit }
+        token = $i
+        gsub(/^\*/, "", token)
+        gsub(/^[(]/, "", token)
+        gsub(/[)]=?$/, "", token)
+        gsub(/^.*\//, "", token)
+        if (token == asset) asset_seen = 1
+        if (length(token) == 64 && token ~ /^[A-Fa-f0-9]+$/) sha = tolower(token)
       }
+      if (asset_seen && sha != "") { print sha; exit }
     }
   ' "${tmp}")"
   rm -f -- "${tmp}"
-  [[ "${sha}" =~ ^[a-f0-9]{64}$ ]] || return 1
+  autobrr::normalize_sha256 "${sha}" || return 1
+}
+
+autobrr::resolve_sha256() {
+  local url="$1" sha
+  if [[ -n "${AB_SHA256}" && "${AB_SHA256}" != "auto" ]]; then
+    autobrr::normalize_sha256 "${AB_SHA256}"
+    return $?
+  fi
+  sha="$(autobrr::resolve_sha256_from_checksums "${url}" || true)"
+  if [[ -z "${sha}" ]]; then
+    sha="$(autobrr::resolve_sha256_from_github_api "${url}" || true)"
+  fi
+  [[ -n "${sha}" ]] || return 1
   printf '%s\n' "${sha}"
 }
 
@@ -165,7 +260,7 @@ autobrr::download_and_extract() {
   sha="$(autobrr::resolve_sha256 "${url}" || true)"
   if [[ -z "${sha}" && "${SEEDBOX_ALLOW_UNVERIFIED_DOWNLOADS}" != "1" ]]; then
     ui::error "$(ui::tr "无法解析 autobrr 校验和：${url}" "Could not resolve autobrr checksum for: ${url}")"
-    ui::error "$(ui::tr "需要匹配的 autobrr_<version>_checksums.txt release 资源，或传入 --autobrr-sha256 SHA256。" "Expected a matching autobrr_<version>_checksums.txt release asset, or pass --autobrr-sha256 SHA256.")"
+    ui::error "$(ui::tr "需要匹配的 autobrr_<version>_checksums.txt release 资源、GitHub release API digest，或传入 --autobrr-sha256 SHA256。" "Expected a matching autobrr_<version>_checksums.txt release asset, GitHub release API digest, or pass --autobrr-sha256 SHA256.")"
     return 1
   fi
 
