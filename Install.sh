@@ -86,8 +86,10 @@ usage() {
 PATH 安装：
   以 root 运行时，Install.sh 默认把发布目录安装到 /opt/seedbox/Dedicated-Seedbox，并把命令链接到 /usr/local/bin/seedboxctl。
   以普通用户运行时，默认安装到 ~/.local/share/seedbox/Dedicated-Seedbox，并链接到 ~/.local/bin/seedboxctl。
+  当通过 bash <(wget ... Install.sh) 远程运行时，Install.sh 会先下载最小运行时（Install.sh、bin、lib、manifests）。
   可用 SEEDBOX_INSTALL_TREE=0 跳过目录安装；可用 SEEDBOXCTL_INSTALL_PATH=0 跳过命令链接。
   也可用 SEEDBOX_INSTALL_DIR=/path 或 SEEDBOXCTL_INSTALL_DIR=/path 修改安装位置。
+  可用 SEEDBOX_RUNTIME_REPO=owner/repo、SEEDBOX_RUNTIME_REF=branch-or-commit 或 SEEDBOX_RUNTIME_RAW_BASE=URL 修改运行时下载源。
 
 Rootless 说明：
   rootless 模式只安装 qBittorrent，不会运行 APT、创建 Linux 用户、写入系统 systemd、调优，
@@ -159,8 +161,10 @@ Additional options:
 PATH install:
   When run as root, Install.sh installs the release tree to /opt/seedbox/Dedicated-Seedbox and links /usr/local/bin/seedboxctl.
   When run as a normal user, it installs to ~/.local/share/seedbox/Dedicated-Seedbox and links ~/.local/bin/seedboxctl.
+  When run through bash <(wget ... Install.sh), Install.sh first downloads the minimal runtime: Install.sh, bin, lib, and manifests.
   Set SEEDBOX_INSTALL_TREE=0 to skip tree installation; set SEEDBOXCTL_INSTALL_PATH=0 to skip the command link.
   Use SEEDBOX_INSTALL_DIR=/path or SEEDBOXCTL_INSTALL_DIR=/path to change the install locations.
+  Use SEEDBOX_RUNTIME_REPO=owner/repo, SEEDBOX_RUNTIME_REF=branch-or-commit, or SEEDBOX_RUNTIME_RAW_BASE=URL to change the runtime source.
 
 Rootless notes:
   Rootless mode installs qBittorrent only. It does not run APT, create Linux users, write system
@@ -315,6 +319,170 @@ default_release_prefix() {
   fi
 }
 
+runtime_files() {
+  cat <<'FILES'
+Install.sh
+bin/seedboxctl
+lib/components/autobrr.bash
+lib/components/autoremove_torrents.bash
+lib/components/bbr.bash
+lib/components/bbr/BBRInstall.sh
+lib/components/docker.bash
+lib/components/qbittorrent.bash
+lib/components/tuning.bash
+lib/components/vertex.bash
+lib/core/apt.bash
+lib/core/args.bash
+lib/core/bootstrap.bash
+lib/core/detect.bash
+lib/core/diagnose.bash
+lib/core/download.bash
+lib/core/fs.bash
+lib/core/log.bash
+lib/core/ports.bash
+lib/core/public_ip.bash
+lib/core/runner.bash
+lib/core/secrets.bash
+lib/core/state.bash
+lib/core/status.bash
+lib/core/systemd.bash
+lib/core/user.bash
+lib/core/validate.bash
+lib/profiles/dedicated.bash
+lib/profiles/shared.bash
+manifests/qbittorrent.tsv
+FILES
+}
+
+runtime_tree_complete() {
+  local root="$1" file
+  [[ -n "${root}" && -d "${root}" ]] || return 1
+  while IFS= read -r file; do
+    [[ -r "${root}/${file}" ]] || return 1
+  done < <(runtime_files)
+}
+
+runtime_install_mode() {
+  case "$1" in
+    Install.sh|bin/seedboxctl|lib/components/bbr/BBRInstall.sh) printf '0755\n' ;;
+    *) printf '0644\n' ;;
+  esac
+}
+
+copy_minimal_runtime_tree() {
+  local src_dir="$1" dest_dir="$2" file mode target_dir
+  while IFS= read -r file; do
+    [[ -r "${src_dir}/${file}" ]] || {
+      warn "$(tr_msg "本地运行时缺少 ${file}" "local runtime is missing ${file}")"
+      return 1
+    }
+    target_dir="$(dirname -- "${dest_dir}/${file}")"
+    install -d -m 0755 -- "${target_dir}" || return $?
+    mode="$(runtime_install_mode "${file}")"
+    install -m "${mode}" -- "${src_dir}/${file}" "${dest_dir}/${file}" || return $?
+  done < <(runtime_files)
+}
+
+runtime_raw_base() {
+  local base="${SEEDBOX_RUNTIME_RAW_BASE:-}"
+  if [[ -z "${base}" ]]; then
+    local repo="${SEEDBOX_RUNTIME_REPO:-jerry048/Dedicated-Seedbox}"
+    local ref="${SEEDBOX_RUNTIME_REF:-main}"
+    base="https://raw.githubusercontent.com/${repo}/${ref}"
+  fi
+  printf '%s\n' "${base%/}"
+}
+
+runtime_fetch() {
+  local url="$1" dest="$2" tmp dir local_path
+  dir="$(dirname -- "${dest}")"
+  install -d -m 0755 -- "${dir}" || return $?
+  tmp="$(mktemp "${dir}/.runtime-download.XXXXXX")"
+
+  if [[ "${url}" == file://* ]]; then
+    local_path="${url#file://}"
+    if ! cp -f -- "${local_path}" "${tmp}"; then
+      rm -f -- "${tmp}"
+      return 1
+    fi
+  elif [[ "${url}" != *://* && -r "${url}" ]]; then
+    if ! cp -f -- "${url}" "${tmp}"; then
+      rm -f -- "${tmp}"
+      return 1
+    fi
+  elif [[ "${url}" != *://* ]]; then
+    rm -f -- "${tmp}"
+    return 1
+  elif command -v curl >/dev/null 2>&1; then
+    if ! curl -fsSL --retry 3 --connect-timeout 15 --max-time 300 -o "${tmp}" "${url}"; then
+      rm -f -- "${tmp}"
+      return 1
+    fi
+  elif command -v wget >/dev/null 2>&1; then
+    if ! wget -qO "${tmp}" "${url}"; then
+      rm -f -- "${tmp}"
+      return 1
+    fi
+  else
+    rm -f -- "${tmp}"
+    die "$(tr_msg '需要 curl 或 wget 来下载最小运行时。' 'curl or wget is required to download the minimal runtime.')"
+  fi
+
+  mv -f -- "${tmp}" "${dest}"
+}
+
+download_minimal_runtime() {
+  local dest parent tmp base file url mode install_enabled
+  install_enabled="${SEEDBOX_INSTALL_TREE:-1}"
+  case "${install_enabled,,}" in
+    0|false|no|off)
+      die "$(tr_msg '远程 Install.sh 需要安装最小运行时；请不要设置 SEEDBOX_INSTALL_TREE=0，或改为在完整仓库目录中运行。' 'Remote Install.sh needs to install the minimal runtime; do not set SEEDBOX_INSTALL_TREE=0, or run from a complete repository checkout.')"
+      ;;
+  esac
+
+  dest="${SEEDBOX_INSTALL_DIR:-${SEEDBOX_INSTALL_PREFIX:-}}"
+  [[ -n "${dest}" ]] || dest="$(default_release_prefix)"
+  parent="$(dirname -- "${dest}")"
+  install -d -m 0755 -- "${parent}" || die "$(tr_msg "无法创建运行时目录父目录 ${parent}" "could not create runtime parent ${parent}")"
+
+  tmp="${dest}.tmp.$$"
+  rm -rf -- "${tmp}"
+  install -d -m 0755 -- "${tmp}" || die "$(tr_msg "无法创建临时运行时目录 ${tmp}" "could not create temporary runtime directory ${tmp}")"
+
+  base="$(runtime_raw_base)"
+  note "$(tr_msg "正在下载最小运行时：${base}" "Downloading minimal runtime: ${base}")"
+  while IFS= read -r file; do
+    url="${base}/${file}"
+    if ! runtime_fetch "${url}" "${tmp}/${file}"; then
+      rm -rf -- "${tmp}"
+      die "$(tr_msg "下载最小运行时失败：${url}" "failed to download minimal runtime file: ${url}")"
+    fi
+    mode="$(runtime_install_mode "${file}")"
+    chmod "${mode}" "${tmp}/${file}" 2>/dev/null || true
+  done < <(runtime_files)
+
+  runtime_tree_complete "${tmp}" || {
+    rm -rf -- "${tmp}"
+    die "$(tr_msg '下载的最小运行时不完整。' 'downloaded minimal runtime is incomplete.')"
+  }
+
+  rm -rf -- "${dest}.old"
+  if [[ -e "${dest}" ]]; then
+    mv -- "${dest}" "${dest}.old" || {
+      rm -rf -- "${tmp}"
+      die "$(tr_msg "无法替换 ${dest}" "could not replace ${dest}")"
+    }
+  fi
+  if ! mv -- "${tmp}" "${dest}"; then
+    [[ -e "${dest}.old" ]] && mv -- "${dest}.old" "${dest}" 2>/dev/null || true
+    rm -rf -- "${tmp}"
+    die "$(tr_msg "无法启用 ${dest}" "could not activate ${dest}")"
+  fi
+  rm -rf -- "${dest}.old"
+  note "$(tr_msg "已安装最小运行时：${dest}" "Installed minimal runtime: ${dest}")"
+  printf '%s\n' "${dest}"
+}
+
 stage_release_tree() {
   local src_dir="$1" dest install_enabled tmp parent
   install_enabled="${SEEDBOX_INSTALL_TREE:-1}"
@@ -343,13 +511,12 @@ stage_release_tree() {
   tmp="${dest}.tmp.$$"
   rm -rf -- "${tmp}"
   install -d -m 0755 -- "${tmp}"
-  if ! (cd -- "${src_dir}" && tar -cf - .) | (cd -- "${tmp}" && tar -xpf -); then
+  if ! copy_minimal_runtime_tree "${src_dir}" "${tmp}"; then
     rm -rf -- "${tmp}"
-    warn "$(tr_msg "发布目录安装失败；将直接使用 ${src_dir}" "release-tree installation failed; using ${src_dir} directly")"
+    warn "$(tr_msg "最小运行时安装失败；将直接使用 ${src_dir}" "minimal-runtime installation failed; using ${src_dir} directly")"
     printf '%s\n' "${src_dir}"
     return 0
   fi
-  chmod 0755 "${tmp}/Install.sh" "${tmp}/bin/seedboxctl" 2>/dev/null || true
   rm -rf -- "${dest}.old"
   if [[ -e "${dest}" ]]; then
     mv -- "${dest}" "${dest}.old" || {
@@ -381,7 +548,11 @@ find_seedboxctl() {
     return 0
   fi
 
-  release_dir="$(stage_release_tree "${script_root}")"
+  if runtime_tree_complete "${script_root}"; then
+    release_dir="$(stage_release_tree "${script_root}")"
+  else
+    release_dir="$(download_minimal_runtime)"
+  fi
   for candidate in \
     "${release_dir}/bin/seedboxctl" \
     "${script_root}/bin/seedboxctl" \
