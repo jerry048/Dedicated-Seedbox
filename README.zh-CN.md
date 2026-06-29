@@ -6,7 +6,7 @@
 
 英文版：[README.md](README.md)
 
-`Dedicated-Seedbox` 是用于构建和管理 Debian/Ubuntu Seedbox 安装的统一后端。它提供了一个统一的 CLI 工具 `seedboxctl`，可用于管理 qBittorrent 实例、主机调优、BBR 变体、Docker/Vertex、autobrr、autoremove-torrents、状态报告、日志和诊断等功能。
+`Dedicated-Seedbox` 是用于构建和管理 Debian/Ubuntu Seedbox 安装的统一后端。它提供了一个统一的 CLI 工具 `seedboxctl --lang zh-CN`，可用于管理 qBittorrent 实例、主机调优、BBR 变体、Docker/Vertex、autobrr、autoremove-torrents、状态报告、日志和诊断等功能。
 
 这个项目主要面向两类使用场景：
 
@@ -32,7 +32,7 @@
 <a id="supported-environments"></a>
 ## 支持环境
 
-`seedboxctl` 会在执行变更前进行运行时检测。
+`seedboxctl --lang zh-CN` 会在执行变更前进行运行时检测。
 
 | 项目 | 支持情况 |
 | --- | --- |
@@ -52,7 +52,7 @@
 ### 独享 Seedbox
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
+bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN\
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
@@ -60,33 +60,38 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   -b -v -r \
   -x
 
-seedboxctl version
+seedboxctl --lang zh-CN version
 ```
 ### 共享 Seedbox
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --rootless \
+bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --rootless --lang zh-CN\
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
   -q 5.2.2 -l v2.0.13 \
   --service-mode auto
 
-~/.local/bin/seedboxctl version
+~/.local/bin/seedboxctl --lang zh-CN version
 ```
 #### 选项
-	1. -u：用户名
+	1. -u：Linux 用户名；rootless 模式下作为 WebUI 用户名
 	2. -p：密码
-	3. -c：Torrent 客户端缓存大小
-	4. -q：qBittorrent 版本
-	5. -l：libtorrent 版本
-	6. -b：安装 autobrr
-	7. -v：安装 vertex
-	8. -r：安装 autoremove-torrents
-	9. -3：启用 BBR V3
-	10.-x：启用 BBRx
-	11. 自定义端口
+	3. -c：qBittorrent 缓存大小，单位 MiB
+	4. -q：qBittorrent 版本，例如 5.2.2
+	5. -l：libtorrent 版本，例如 v1.2.20
+	6. -b：安装 autobrr（需要 root）
+	7. -v：安装 Vertex（需要 root）
+	8. -r：安装 autoremove-torrents（需要 root）
+	9. -3：安装 BBRv3（需要 root）
+	10.-x：安装 BBRx（需要 root）
+	11.-o：自定义端口
+	12.-T：跳过系统调优
+	13.--storage-path 路径：系统调优使用该路径背后的存储；默认使用 qBittorrent 下载目录
+	14.--disk-scheduler-all：对所有合格物理盘应用调度器策略，而不是只处理下载路径背后的磁盘
+	15.-L：设置安装界面语言
+	16.-h：显示帮助
 
-##### `Install.sh` 运行完成后，可以通过 `seedboxctl` 调用脚本
+##### `Install.sh` 运行完成后，可以通过 `seedboxctl --lang zh-CN` 调用脚本
 
 ---
 
@@ -94,32 +99,32 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 ## CLI 概览
 
 ```bash
-seedboxctl install --profile dedicated|shared [options]
-seedboxctl qbittorrent add-user|install-self|upgrade|uninstall|status|logs [options]
-seedboxctl autobrr install|upgrade|uninstall|status [options]
-seedboxctl autoremove-torrents install|upgrade|uninstall|status [options]
-seedboxctl vertex install|upgrade|uninstall|status [options]
-seedboxctl docker install|uninstall|status [options]
-seedboxctl tuning apply|uninstall|status [options]
-seedboxctl bbr install|uninstall|status [options]
-seedboxctl status [--json]
-seedboxctl logs qbittorrent --user USER
-seedboxctl doctor [--bundle]
-seedboxctl list qbittorrent
-seedboxctl version
+seedboxctl --lang zh-CN install --profile dedicated|shared [options]
+seedboxctl --lang zh-CN qbittorrent add-user|install-self|upgrade|uninstall|status|logs [options]
+seedboxctl --lang zh-CN autobrr install|upgrade|uninstall|status [options]
+seedboxctl --lang zh-CN autoremove-torrents install|upgrade|uninstall|status [options]
+seedboxctl --lang zh-CN vertex install|upgrade|uninstall|status [options]
+seedboxctl --lang zh-CN docker install|uninstall|status [options]
+seedboxctl --lang zh-CN tuning apply|uninstall|status [options]
+seedboxctl --lang zh-CN bbr install|uninstall|status [options]
+seedboxctl --lang zh-CN status [--json]
+seedboxctl --lang zh-CN logs qbittorrent --user USER
+seedboxctl --lang zh-CN doctor [--bundle]
+seedboxctl --lang zh-CN list qbittorrent
+seedboxctl --lang zh-CN version
 ```
 
 使用内置帮助查看各组件的专用参数：
 
 ```bash
-seedboxctl help
-seedboxctl qbittorrent help
-seedboxctl tuning help
-seedboxctl bbr help
-seedboxctl autobrr help
-seedboxctl autoremove-torrents help
-seedboxctl vertex help
-seedboxctl docker help
+seedboxctl --lang zh-CN help
+seedboxctl --lang zh-CN qbittorrent help
+seedboxctl --lang zh-CN tuning help
+seedboxctl --lang zh-CN bbr help
+seedboxctl --lang zh-CN autobrr help
+seedboxctl --lang zh-CN autoremove-torrents help
+seedboxctl --lang zh-CN vertex help
+seedboxctl --lang zh-CN docker help
 ```
 
 ---
@@ -132,7 +137,7 @@ seedboxctl docker help
 使用发行版软件包，为某个 Linux 用户安装由 root 管理的实例：
 
 ```bash
-printf '%s' 'change-this-password' | sudo seedboxctl qbittorrent add-user \
+printf '%s' 'change-this-password' | sudo seedboxctl --lang zh-CN qbittorrent add-user \
   --user jerry048 \
   --password-stdin \
   --source distro \
@@ -144,7 +149,7 @@ printf '%s' 'change-this-password' | sudo seedboxctl qbittorrent add-user \
 为当前用户安装无 root 实例：
 
 ```bash
-printf '%s' 'change-this-password' | seedboxctl qbittorrent install-self \
+printf '%s' 'change-this-password' | seedboxctl --lang zh-CN qbittorrent install-self \
   --password-stdin \
   --webui-username jerry048 \
   --source static \
@@ -179,7 +184,7 @@ printf '%s' 'change-this-password' | seedboxctl qbittorrent install-self \
 列出可用的 qBittorrent 来源和静态 manifest 条目：
 
 ```bash
-seedboxctl list qbittorrent
+seedboxctl --lang zh-CN list qbittorrent
 ```
 
 静态 qBittorrent 版本会从 `manifests/qbittorrent.tsv` 这份清单中选择。如果缺少 `--qb-version` 或 `--libtorrent-version`，或者提供的版本组合没有出现在当前架构对应的列表中，交互式安装会打印清单中的可选项并要求你选择其中一个。非交互式安装（例如 CI、cron 或无 TTY 会话）会打印有效选项后退出，方便你使用有效的清单版本组合重新运行。`--source distro` 和 `--source existing` 不使用这份清单，也不会显示版本选择菜单。
@@ -221,17 +226,17 @@ seedboxctl list qbittorrent
 状态与日志：
 
 ```bash
-sudo seedboxctl qbittorrent status --user jerry048
-sudo seedboxctl qbittorrent status --user jerry048 --json
-sudo seedboxctl qbittorrent logs --user jerry048
+sudo seedboxctl --lang zh-CN qbittorrent status --user jerry048
+sudo seedboxctl --lang zh-CN qbittorrent status --user jerry048 --json
+sudo seedboxctl --lang zh-CN qbittorrent logs --user jerry048
 sudo journalctl -u seedbox-qbittorrent-jerry048.service -n 200 --no-pager
 ```
 
 无 root 状态与日志：
 
 ```bash
-seedboxctl qbittorrent status
-seedboxctl qbittorrent logs
+seedboxctl --lang zh-CN qbittorrent status
+seedboxctl --lang zh-CN qbittorrent logs
 systemctl --user status seedbox-qbittorrent.service --no-pager
 journalctl --user -u seedbox-qbittorrent.service -n 200 --no-pager
 ```
@@ -241,7 +246,7 @@ journalctl --user -u seedbox-qbittorrent.service -n 200 --no-pager
 应用自适应 Seedbox 调优：
 
 ```bash
-sudo seedboxctl tuning apply
+sudo seedboxctl --lang zh-CN tuning apply
 ```
 
 常用调优选项：
@@ -279,8 +284,8 @@ sudo seedboxctl tuning apply
 检查或移除调优：
 
 ```bash
-sudo seedboxctl tuning status
-sudo seedboxctl tuning uninstall
+sudo seedboxctl --lang zh-CN tuning status
+sudo seedboxctl --lang zh-CN tuning uninstall
 ```
 
 卸载后可能需要重启，才能完全恢复运行时内核/网络参数。
@@ -292,7 +297,7 @@ sudo seedboxctl tuning uninstall
 安装一种 BBR 算法：
 
 ```bash
-sudo seedboxctl bbr install --bbr-algo bbrx
+sudo seedboxctl --lang zh-CN bbr install --bbr-algo bbrx
 ```
 
 支持的算法：
@@ -308,7 +313,7 @@ bbrw_brutal
 固定并校验外部 BBR 安装脚本：
 
 ```bash
-sudo seedboxctl bbr install \
+sudo seedboxctl --lang zh-CN bbr install \
   --bbr-algo bbrx \
   --bbr-script-url 'https://raw.githubusercontent.com/jerry048/Trove/<commit>/BBR-Install/BBRInstall.sh' \
   --bbr-raw-base 'https://raw.githubusercontent.com/jerry048/Trove/<commit>/BBR-Install/BBR' \
@@ -318,8 +323,8 @@ sudo seedboxctl bbr install \
 检查或移除由 BBR 管理的状态：
 
 ```bash
-sudo seedboxctl bbr status
-sudo seedboxctl bbr uninstall --bbr-algo bbrx
+sudo seedboxctl --lang zh-CN bbr status
+sudo seedboxctl --lang zh-CN bbr uninstall --bbr-algo bbrx
 ```
 
 `bbrv3` 使用内核软件包路径，可能需要重启。对于基于 DKMS 的变体，如果本地缺少当前运行内核对应的头文件，并且无法通过 `apt install linux-headers-$(uname -r)` 安装，Seedbox 会自动安装发行版通用内核镜像和头文件，记录一个待处理的 BBR 状态，并要求你先重启进入通用内核，然后再重新运行 BBR 安装。DKMS/内核变更风险较高；请先在一次性 VPS 上测试。
@@ -329,21 +334,21 @@ sudo seedboxctl bbr uninstall --bbr-algo bbrx
 安装 Docker：
 
 ```bash
-sudo seedboxctl docker install --docker-source official
+sudo seedboxctl --lang zh-CN docker install --docker-source official
 ```
 
 也可以使用发行版软件包：
 
 ```bash
-sudo seedboxctl docker install --docker-source distro
+sudo seedboxctl --lang zh-CN docker install --docker-source distro
 ```
 
 状态与卸载：
 
 ```bash
-sudo seedboxctl docker status
-sudo seedboxctl docker uninstall
-sudo seedboxctl docker uninstall --purge --yes
+sudo seedboxctl --lang zh-CN docker status
+sudo seedboxctl --lang zh-CN docker uninstall
+sudo seedboxctl --lang zh-CN docker uninstall --purge --yes
 ```
 
 ### Vertex
@@ -351,7 +356,7 @@ sudo seedboxctl docker uninstall --purge --yes
 通过 Docker 安装 Vertex：
 
 ```bash
-sudo seedboxctl vertex install \
+sudo seedboxctl --lang zh-CN vertex install \
   --vertex-port 3000 \
   --vertex-data-dir /root/vertex
 ```
@@ -367,16 +372,16 @@ port:  3000
 只有在你明确需要 Docker 主机网络模式时，才使用 host networking：
 
 ```bash
-sudo seedboxctl vertex install --host-network
+sudo seedboxctl --lang zh-CN vertex install --host-network
 ```
 
 状态、卸载：
 
 ```bash
 
-sudo seedboxctl vertex status
-sudo seedboxctl vertex uninstall
-sudo seedboxctl vertex uninstall --purge --yes
+sudo seedboxctl --lang zh-CN vertex status
+sudo seedboxctl --lang zh-CN vertex uninstall
+sudo seedboxctl --lang zh-CN vertex uninstall --purge --yes
 ```
 
 ### autobrr
@@ -384,7 +389,7 @@ sudo seedboxctl vertex uninstall --purge --yes
 为某个用户安装 autobrr：
 
 ```bash
-sudo seedboxctl autobrr install \
+sudo seedboxctl --lang zh-CN autobrr install \
   --user jerry048 \
   --autobrr-port 7474
 ```
@@ -393,19 +398,19 @@ sudo seedboxctl autobrr install \
 
 ```bash
 
-sudo seedboxctl autobrr status --user jerry048
-sudo seedboxctl autobrr uninstall --user jerry048
-sudo seedboxctl autobrr uninstall --user jerry048 --purge --yes
+sudo seedboxctl --lang zh-CN autobrr status --user jerry048
+sudo seedboxctl --lang zh-CN autobrr uninstall --user jerry048
+sudo seedboxctl --lang zh-CN autobrr uninstall --user jerry048 --purge --yes
 ```
 
-对于标准的 GitHub Release 产物，`seedboxctl` 会尝试解析并校验匹配的校验和文件。对于自定义 URL，请提供 `--autobrr-sha256`；或者在审查构建产物后，显式传入 `--allow-unverified-downloads`。
+对于标准的 GitHub Release 产物，`seedboxctl --lang zh-CN` 会尝试解析并校验匹配的校验和文件。对于自定义 URL，请提供 `--autobrr-sha256`；或者在审查构建产物后，显式传入 `--allow-unverified-downloads`。
 
 ### autoremove-torrents
 
 使用 `pipx` 安装到目标用户的家目录下：
 
 ```bash
-sudo seedboxctl autoremove-torrents install --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents install --user jerry048
 ```
 
 生成的配置是一个安全的起步模板。在启用自动移除前，请先编辑它：
@@ -418,16 +423,16 @@ sudo systemctl enable --now seedbox-autoremove-torrents-jerry048.timer
 立即安装并启用定时器：
 
 ```bash
-sudo seedboxctl autoremove-torrents install --user jerry048 --enable-autoremove
+sudo seedboxctl --lang zh-CN autoremove-torrents install --user jerry048 --enable-autoremove
 ```
 
 升级、状态、卸载：
 
 ```bash
-sudo seedboxctl autoremove-torrents upgrade --user jerry048
-sudo seedboxctl autoremove-torrents status --user jerry048
-sudo seedboxctl autoremove-torrents uninstall --user jerry048
-sudo seedboxctl autoremove-torrents uninstall --user jerry048 --purge --yes
+sudo seedboxctl --lang zh-CN autoremove-torrents upgrade --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents status --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents uninstall --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents uninstall --user jerry048 --purge --yes
 ```
 
 ---
@@ -467,15 +472,15 @@ sudo seedboxctl autoremove-torrents uninstall --user jerry048 --purge --yes
 总体状态：
 
 ```bash
-seedboxctl status
-seedboxctl status --json
+seedboxctl --lang zh-CN status
+seedboxctl --lang zh-CN status --json
 ```
 
 诊断摘要：
 
 ```bash
-seedboxctl doctor
-seedboxctl doctor --bundle
+seedboxctl --lang zh-CN doctor
+seedboxctl --lang zh-CN doctor --bundle
 ```
 
 ---
@@ -488,13 +493,13 @@ seedboxctl doctor --bundle
 升级基于发行版软件包的安装：
 
 ```bash
-sudo seedboxctl qbittorrent upgrade --user jerry048 --source distro
+sudo seedboxctl --lang zh-CN qbittorrent upgrade --user jerry048 --source distro
 ```
 
 升级静态安装：
 
 ```bash
-printf '%s' 'change-this-password' | sudo seedboxctl qbittorrent upgrade \
+printf '%s' 'change-this-password' | sudo seedboxctl --lang zh-CN qbittorrent upgrade \
   --user jerry048 \
   --password-stdin \
   --source static \
@@ -505,7 +510,7 @@ printf '%s' 'change-this-password' | sudo seedboxctl qbittorrent upgrade \
 非破坏性卸载：
 
 ```bash
-sudo seedboxctl qbittorrent uninstall --user jerry048
+sudo seedboxctl --lang zh-CN qbittorrent uninstall --user jerry048
 ```
 
 这会停止并移除启动文件，但会保留 qBittorrent 配置和下载内容。
@@ -513,29 +518,29 @@ sudo seedboxctl qbittorrent uninstall --user jerry048
 清除 qBittorrent 配置/数据：
 
 ```bash
-sudo seedboxctl qbittorrent uninstall --user jerry048 --purge --yes
+sudo seedboxctl --lang zh-CN qbittorrent uninstall --user jerry048 --purge --yes
 ```
 
 无 root 卸载：
 
 ```bash
-seedboxctl qbittorrent uninstall
-seedboxctl qbittorrent uninstall --purge --yes
+seedboxctl --lang zh-CN qbittorrent uninstall
+seedboxctl --lang zh-CN qbittorrent uninstall --purge --yes
 ```
 
 ### 可选组件
 
 ```bash
-sudo seedboxctl autobrr upgrade --user jerry048
-sudo seedboxctl autoremove-torrents upgrade --user jerry048
-sudo seedboxctl vertex upgrade
+sudo seedboxctl --lang zh-CN autobrr upgrade --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents upgrade --user jerry048
+sudo seedboxctl --lang zh-CN vertex upgrade
 
-sudo seedboxctl autobrr uninstall --user jerry048
-sudo seedboxctl autoremove-torrents uninstall --user jerry048
-sudo seedboxctl vertex uninstall
-sudo seedboxctl docker uninstall
-sudo seedboxctl tuning uninstall
-sudo seedboxctl bbr uninstall --bbr-algo bbrx
+sudo seedboxctl --lang zh-CN autobrr uninstall --user jerry048
+sudo seedboxctl --lang zh-CN autoremove-torrents uninstall --user jerry048
+sudo seedboxctl --lang zh-CN vertex uninstall
+sudo seedboxctl --lang zh-CN docker uninstall
+sudo seedboxctl --lang zh-CN tuning uninstall
+sudo seedboxctl --lang zh-CN bbr uninstall --bbr-algo bbrx
 ```
 
 只有在你明确想移除组件数据/配置时，才使用 `--purge --yes`。
@@ -548,14 +553,14 @@ sudo seedboxctl bbr uninstall --bbr-algo bbrx
 先从这里开始：
 
 ```bash
-seedboxctl doctor
-seedboxctl status
+seedboxctl --lang zh-CN doctor
+seedboxctl --lang zh-CN status
 ```
 
 创建诊断包：
 
 ```bash
-seedboxctl doctor --bundle
+seedboxctl --lang zh-CN doctor --bundle
 ```
 
 Root/管理员日志：
