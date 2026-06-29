@@ -71,17 +71,23 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 ~/.local/bin/seedboxctl version
 ```
 #### Options
-	1. -u: username 
+	1. -u: Linux user; in rootless mode, WebUI username 
 	2. -p: password
-	3. -c: Cache size for torrent client
-	4. -q: qBittorrent versions
-	5. -l: libtorrent versions
-	6. -b: Install autobrr
-	7. -v: Install vertex
-	8. -r: Install autoremove-torrents
-	9. -3: Enable BBR V3
-	10.-x: Enable BBRx
-	11. Customize ports
+	3. -c: qBittorrent cache size in MiB
+	4. -q: qBittorrent versions, for example 5.2.2
+	5. -l: libtorrent versions, for example v1.2.20
+	6. -b: Install autobrr; root required
+	7. -v: Install Vertex; root required
+	8. -r: Install autoremove-torrents; root required
+	9. -3: Install BBRv3; root required
+	10.-x: Install BBRx; root required
+	11.-o: Prompt for custom ports
+	12.-T: Disable tuning
+	13.--storage-path PATH: Use PATH backing storage for host tuning; default is qBittorrent download path
+	14.--disk-scheduler-all: Apply scheduler policy to all eligible physical disks, not only download-path disks
+	15.-L: Installer language
+	16.-h: Show help
+	
 
 ##### After `Install.sh` runs, you can call the script via `seedboxctl`
 
