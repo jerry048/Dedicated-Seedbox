@@ -11,6 +11,7 @@ source "${SEEDBOX_ROOT}/lib/core/validate.bash"
 source "${SEEDBOX_ROOT}/lib/core/detect.bash"
 source "${SEEDBOX_ROOT}/lib/core/fs.bash"
 source "${SEEDBOX_ROOT}/lib/core/state.bash"
+source "${SEEDBOX_ROOT}/lib/core/storage.bash"
 source "${SEEDBOX_ROOT}/lib/core/download.bash"
 source "${SEEDBOX_ROOT}/lib/core/apt.bash"
 source "${SEEDBOX_ROOT}/lib/core/user.bash"
@@ -112,9 +113,54 @@ USAGE
   fi
 }
 
+seedbox::install_unexpected_args() {
+  local unexpected first component_name
+  unexpected="$(args::format_positionals)"
+  first="${POSITIONAL[0]:-}"
+
+  ui::error "$(ui::tr "install 不接受位置参数：${unexpected}" "install does not accept positional arguments: ${unexpected}")"
+
+  case "${first}" in
+    qb|qbittorrent)
+      ui::error "$(ui::tr "安装 qBittorrent 请使用：" "To install qBittorrent, use:")"
+      ui::error "  seedboxctl qbittorrent add-user --user USER --password-stdin"
+      ui::error "  seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin"
+      ;;
+    vertex)
+      ui::error "$(ui::tr "安装 Vertex 请使用：" "To install Vertex, use:")"
+      ui::error "  seedboxctl vertex install --user WEBUI_USER --password-stdin"
+      ui::error "  seedboxctl install --profile dedicated --components vertex --user WEBUI_USER --password-stdin"
+      ;;
+    autobrr|autoremove-torrents|autoremove_torrents|tuning|bbr|docker)
+      component_name="${first//_/-}"
+      ui::error "$(ui::tr "安装组件请使用组件子命令或 --components：" "To install a component, use the component subcommand or --components:")"
+      ui::error "  seedboxctl ${component_name} install"
+      ui::error "  seedboxctl install --profile dedicated --components ${component_name} ..."
+      ;;
+    *)
+      ui::error "$(ui::tr "请使用 --components 指定要安装的组件。" "Use --components to choose install components.")"
+      ui::error "  seedboxctl install --profile dedicated --components qbittorrent,vertex --user USER --password-stdin"
+      ;;
+  esac
+
+  return 2
+}
+
 seedbox::install() {
   args::parse "$@"
   args::has help && { seedbox::usage; return 0; }
+  if ((${#POSITIONAL[@]} > 0)); then
+    seedbox::install_unexpected_args
+    return $?
+  fi
+  if args::has rootless && [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+    if declare -F qbittorrent::reject_rootless_as_root >/dev/null; then
+      qbittorrent::reject_rootless_as_root
+    else
+      ui::error "$(ui::tr "rootless qBittorrent 不能以 root/sudo 运行。" "Rootless qBittorrent cannot be run as root/sudo.")"
+    fi
+    return 2
+  fi
   local profile
   profile="$(args::get profile dedicated)"
   case "${profile}" in

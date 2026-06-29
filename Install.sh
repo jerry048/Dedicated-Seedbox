@@ -53,6 +53,8 @@ usage() {
   -3                         安装 BBRv3（需要 root）
   -o                         交互式设置端口
   -T, --no-tuning            跳过系统调优
+  --storage-path 路径        系统调优使用该路径背后的存储；默认使用 qBittorrent 下载目录
+  --disk-scheduler-all       对所有合格物理盘应用调度器策略，而不是只处理下载路径背后的磁盘
   -L, --lang en|zh-CN        设置安装界面语言
   -h, --help                 显示帮助
 
@@ -128,6 +130,8 @@ Legacy-compatible short options:
   -3                         Install BBRv3; root required
   -o                         Prompt for custom ports
   -T, --no-tuning            Disable tuning
+  --storage-path PATH        Use PATH backing storage for host tuning; default is qBittorrent download path
+  --disk-scheduler-all       Apply scheduler policy to all eligible physical disks, not only download-path disks
   -L, --lang en|zh-CN        Installer language
   -h, --help                 Show help
 
@@ -344,6 +348,7 @@ lib/core/public_ip.bash
 lib/core/runner.bash
 lib/core/secrets.bash
 lib/core/state.bash
+lib/core/storage.bash
 lib/core/status.bash
 lib/core/systemd.bash
 lib/core/user.bash
@@ -656,6 +661,7 @@ main() {
   local bbr_algo="" bbr_script_url="" bbr_script_sha256="${SEEDBOX_BBR_SCRIPT_SHA256:-}" bbr_raw_base="${SEEDBOX_BBR_RAW_BASE:-}" bbr_lang=""
   local tuning_enabled=1 qbit_requested=0 password_stdin=0 source="" allow_unverified=0 allow_unverified_bbr=0 force_runtime=0 components_overridden=0
   local upgrade_system=0 no_clear=0 rootless=0 service_mode="" webui_username="" profile="" root_only_requested=0
+  local storage_path="" disk_scheduler_all=0
 
   set_language "${LANG_CODE}"
 
@@ -687,6 +693,9 @@ main() {
       -3) root_only_requested=1; bbr_algo="bbrv3"; components="$(csv_add "${components}" bbr)"; shift ;;
       -o) custom_ports=1; shift ;;
       -T|--no-tuning) tuning_enabled=0; components="$(csv_remove "${components}" tuning)"; shift ;;
+      --storage-path) require_value "$1" "${2:-}"; root_only_requested=1; storage_path="$2"; components="$(csv_add "${components}" tuning)"; shift 2 ;;
+      --storage-path=*) root_only_requested=1; storage_path="${1#*=}"; components="$(csv_add "${components}" tuning)"; shift ;;
+      --disk-scheduler-all) root_only_requested=1; disk_scheduler_all=1; components="$(csv_add "${components}" tuning)"; shift ;;
       --rootless|--shared|--install-rootless|--install-self) rootless=1; qbit_requested=1; shift ;;
       --profile) require_value "$1" "${2:-}"; profile="$2"; shift 2 ;;
       --profile=*) profile="${1#*=}"; shift ;;
@@ -770,8 +779,8 @@ main() {
   fi
 
   if (( rootless )); then
-    if [[ "${EUID:-$(id -u)}" -eq 0 && "${SEEDBOX_ALLOW_ROOTLESS_AS_ROOT:-0}" != "1" ]]; then
-      die "$(tr_msg '请不要用 sudo/root 运行 --rootless；请切换到目标普通用户后执行。' 'Do not run --rootless with sudo/root; run it as the target normal user.')"
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+      die "$(tr_msg 'rootless qBittorrent 不能以 root/sudo 运行。请切换到目标普通用户后执行；如需 root/admin 安装，请使用：sudo seedboxctl qbittorrent add-user --user USER --password-stdin，或 sudo seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin。' 'Rootless qBittorrent cannot be run as root/sudo. Run it as the target normal user. For root/admin install, use: sudo seedboxctl qbittorrent add-user --user USER --password-stdin, or sudo seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin.')"
     fi
     if (( root_only_requested )); then
       die "$(tr_msg 'rootless Install.sh 只支持 qBittorrent；请去掉 -b/-v/-r/-x/-3 或 BBR/Vertex/autobrr 相关参数。' 'rootless Install.sh supports qBittorrent only; remove -b/-v/-r/-x/-3 or BBR/Vertex/autobrr options.')"
@@ -864,6 +873,11 @@ main() {
     [[ -n "${qb_incoming_port}" ]] && cmd+=(--incoming-port "${qb_incoming_port}")
     [[ -n "${service_mode}" ]] && cmd+=(--service-mode "${service_mode}")
     (( allow_unverified )) && cmd+=(--allow-unverified-downloads)
+  fi
+
+  if csv_contains "${components}" tuning; then
+    [[ -n "${storage_path}" ]] && cmd+=(--storage-path "${storage_path}")
+    (( disk_scheduler_all )) && cmd+=(--disk-scheduler-all)
   fi
 
   [[ -n "${autobrr_port}" ]] && cmd+=(--autobrr-port "${autobrr_port}")

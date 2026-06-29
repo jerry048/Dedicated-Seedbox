@@ -15,7 +15,7 @@ args::reset() {
 
 args::is_flag() {
   case "$1" in
-    help|yes|dry_run|json|bundle|purge|force|rootless|no_cron|allow_unverified_downloads|allow_unverified_bbr_installer|password_stdin|set_system_password|no_tuning|no_bbr|debug|enable_autoremove|host_network|force_runtime|upgrade_system|no_clear|no_rss|no_rps|no_rfs|no_xps|no_ring_buffer|no_initial_cwnd|no_disk_scheduler|no_net_queue_tuning|no_sysctl|no_limits|no_cron)
+    help|yes|dry_run|json|bundle|purge|force|rootless|no_cron|allow_unverified_downloads|allow_unverified_bbr_installer|password_stdin|set_system_password|no_tuning|no_bbr|debug|enable_autoremove|host_network|force_runtime|upgrade_system|no_clear|no_rss|no_rps|no_rfs|no_xps|no_ring_buffer|no_initial_cwnd|no_disk_scheduler|disk_scheduler_all|no_net_queue_tuning|no_sysctl|no_limits|no_cron)
       return 0 ;;
     *) return 1 ;;
   esac
@@ -83,6 +83,18 @@ args::has() {
   local key="$1"
   key="${key//-/_}"
   [[ -v ARGS["${key}"] ]]
+}
+
+args::format_positionals() {
+  local item first=1
+  for item in "${POSITIONAL[@]}"; do
+    if (( first )); then
+      first=0
+    else
+      printf ' '
+    fi
+    printf '%q' "${item}"
+  done
 }
 
 args::copy_value_alias() {

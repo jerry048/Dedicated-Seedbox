@@ -40,7 +40,7 @@ vertex::usage() {
 
 说明：
   默认网络会把宿主机端口映射到容器内 3000 端口。只有明确需要 Docker host 网络时才使用 --host-network。
-  如果传入 --user 和密码选项，seedboxctl 会在首次启动前写入 Vertex WebUI 用户名和密码。
+  如果传入 --user 和密码选项，seedboxctl 会先让 Vertex 镜像初始化数据目录，再写入 Vertex WebUI 用户名和密码。
 USAGE
   else
     cat <<'USAGE'
@@ -65,7 +65,7 @@ Defaults:
 
 Notes:
   Default networking maps host PORT to container 3000. Use --host-network only if you explicitly want Docker host networking.
-  When --user and a password option are provided, seedboxctl writes the Vertex WebUI username/password before first start.
+  When --user and a password option are provided, seedboxctl lets the Vertex image initialize the data directory first, then writes the Vertex WebUI username/password before the final start.
 USAGE
   fi
 }
@@ -140,6 +140,83 @@ vertex::create_data_dir() {
   install -d -m 0700 -o root -g root "${VERTEX_DATA_DIR}"
 }
 
+vertex::create_initialized_template() {
+  local template_dir="$1"
+  local init_name="${VERTEX_NAME}-init-$$"
+  local waited=0
+
+  install -d -m 0700 -o root -g root "${template_dir}" || return $?
+  docker rm -f "${init_name}" >/dev/null 2>&1 || true
+
+  docker run -d --name "${init_name}" \
+    -v "${template_dir}:/vertex" \
+    -e "TZ=${VERTEX_TZ}" \
+    "${VERTEX_IMAGE}" >/dev/null || return $?
+
+  while [[ "${waited}" -lt 60 ]]; do
+    if [[ -f "${template_dir}/data/setting.json" \
+       && -f "${template_dir}/db/sql.db" \
+       && -f "${template_dir}/config/config.yaml" ]]; then
+      docker stop "${init_name}" >/dev/null 2>&1 || true
+      docker rm -f "${init_name}" >/dev/null 2>&1 || true
+      return 0
+    fi
+
+    if ! docker ps --format '{{.Names}}' | grep -Fxq "${init_name}"; then
+      docker logs "${init_name}" >&2 || true
+      docker rm -f "${init_name}" >/dev/null 2>&1 || true
+      ui::error "$(ui::tr "Vertex 初始化容器在数据目录初始化完成前退出。" "Vertex initialization container exited before the data directory was initialized.")"
+      return 1
+    fi
+
+    sleep 1
+    waited=$((waited + 1))
+  done
+
+  docker logs "${init_name}" >&2 || true
+  docker stop "${init_name}" >/dev/null 2>&1 || true
+  docker rm -f "${init_name}" >/dev/null 2>&1 || true
+  ui::error "$(ui::tr "等待 Vertex 初始化数据目录超时。" "Timed out waiting for Vertex to initialize the data directory.")"
+  return 1
+}
+
+vertex::merge_initialized_template() {
+  local template_dir="$1"
+  local path rel target
+
+  while IFS= read -r -d '' path; do
+    rel="${path#${template_dir}/}"
+    install -d -m 0700 -o root -g root "${VERTEX_DATA_DIR}/${rel}" || return $?
+  done < <(find "${template_dir}" -mindepth 1 -type d -print0)
+
+  while IFS= read -r -d '' path; do
+    rel="${path#${template_dir}/}"
+    target="${VERTEX_DATA_DIR}/${rel}"
+    if [[ ! -e "${target}" ]]; then
+      install -d -m 0700 -o root -g root "$(dirname "${target}")" || return $?
+      cp -a "${path}" "${target}" || return $?
+      chown root:root "${target}" 2>/dev/null || true
+    fi
+  done < <(find "${template_dir}" -mindepth 1 -type f -print0)
+}
+
+vertex::initialize_data_dir() {
+  local template_dir rc
+
+  vertex::create_data_dir || return $?
+  template_dir="$(mktemp -d /tmp/vertex-template.XXXXXX)" || return 1
+
+  vertex::create_initialized_template "${template_dir}"
+  rc=$?
+  if [[ "${rc}" -eq 0 ]]; then
+    vertex::merge_initialized_template "${template_dir}"
+    rc=$?
+  fi
+
+  rm -rf -- "${template_dir}"
+  return "${rc}"
+}
+
 vertex::json_escape() {
   local value="$1"
   value="${value//\\/\\\\}"
@@ -203,6 +280,7 @@ EOF_SETTINGS
 
   chown root:root "${settings}" 2>/dev/null || true
   chmod 600 "${settings}" 2>/dev/null || true
+  rm -f "${data_dir}/password" 2>/dev/null || true
   VERTEX_WEB_PASSWORD=""
 }
 
@@ -266,9 +344,9 @@ vertex::install_from_parsed() {
 
   runner::must vertex.preflight "$(ui::tr "预检" "Preflight checks")" "" vertex::preflight || return $?
   runner::must vertex.docker "$(ui::tr "安装/验证 Docker" "Install/verify Docker")" "docker.service" vertex::ensure_docker || return $?
-  runner::must vertex.data "$(ui::tr "创建 Vertex 数据目录" "Create Vertex data directory")" "" vertex::create_data_dir || return $?
-  runner::must vertex.credentials "$(ui::tr "写入 Vertex 登录信息" "Write Vertex login credentials")" "" vertex::write_credentials || return $?
   runner::must vertex.pull "$(ui::tr "拉取 Vertex 镜像" "Pull Vertex image")" "" docker pull "${VERTEX_IMAGE}" || return $?
+  runner::must vertex.data "$(ui::tr "使用 Vertex 镜像初始化数据目录" "Initialize Vertex data directory from image")" "" vertex::initialize_data_dir || return $?
+  runner::must vertex.credentials "$(ui::tr "写入 Vertex 登录信息" "Write Vertex login credentials")" "" vertex::write_credentials || return $?
   runner::must vertex.run "$(ui::tr "运行 Vertex 容器" "Run Vertex container")" "" vertex::run_container || return $?
   runner::must vertex.health "$(ui::tr "Vertex 健康检查" "Healthcheck Vertex")" "" vertex::healthcheck || return $?
   runner::must vertex.state "$(ui::tr "保存 Vertex 状态" "Save Vertex state")" "" vertex::write_state || return $?
@@ -313,6 +391,7 @@ vertex::upgrade_from_parsed() {
   ui::log_location
   printf '\n'
   runner::must vertex.pull "$(ui::tr "拉取 Vertex 镜像" "Pull Vertex image")" "" docker pull "${VERTEX_IMAGE}" || return $?
+  runner::must vertex.data "$(ui::tr "修复/初始化 Vertex 数据目录" "Repair/initialize Vertex data directory")" "" vertex::initialize_data_dir || return $?
   runner::must vertex.run "$(ui::tr "重建 Vertex 容器" "Recreate Vertex container")" "" vertex::run_container || return $?
   runner::must vertex.health "$(ui::tr "Vertex 健康检查" "Healthcheck Vertex")" "" vertex::healthcheck || return $?
   runner::must vertex.state "$(ui::tr "更新 Vertex 状态" "Update Vertex state")" "" vertex::write_state || return $?

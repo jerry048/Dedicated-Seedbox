@@ -75,10 +75,12 @@ qbittorrent::usage() {
 Root/admin 模式：
   --user 是拥有 qBittorrent 实例的 Linux 账号。
   默认启动方式为 systemd system service。
+  root/admin 安装语法：seedboxctl qbittorrent add-user --user USER --password-stdin
+  或：seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin
   --source distro 使用系统 qbittorrent-nox 包；--source static 下载或使用固定版本的静态二进制。
 
 Rootless/共享账号模式：
-  使用 --rootless、install-self，或以普通用户运行 shared profile。
+  使用 --rootless、install-self，或以普通用户运行 shared profile；不要使用 sudo/root。
   进程始终归当前 Unix 用户所有；--user 可以省略。
   可用 --webui-username 单独设置 WebUI 登录名。
 USAGE
@@ -126,10 +128,12 @@ Upgrade/downgrade notes:
 Root/admin mode:
   --user is the Linux account that owns the qBittorrent instance.
   Default service mode is system.
+  Root/admin install syntax: seedboxctl qbittorrent add-user --user USER --password-stdin
+  Or: seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin
   Source distro installs the OS qbittorrent-nox package; source static downloads a pinned binary.
 
 Rootless/shared-user mode:
-  Use --rootless or install-self, or run the shared profile as a non-root user.
+  Use --rootless or install-self, or run the shared profile as a non-root user; do not use sudo/root.
   The process owner is always the current Unix user. --user may be omitted.
   Use --webui-username to set the WebUI login name independently.
   Default service mode is auto: user systemd service, then screen, then daemon/crontab fallback.
@@ -423,6 +427,14 @@ qbittorrent::is_rootless_requested() {
   return 1
 }
 
+qbittorrent::reject_rootless_as_root() {
+  ui::error "$(ui::tr "rootless qBittorrent 不能以 root/sudo 运行。请切换到目标普通用户后执行。" "Rootless qBittorrent cannot be run as root/sudo. Run it as the target normal user instead.")"
+  ui::error "$(ui::tr "如需 root/admin 安装，请使用以下语法：" "For root/admin qBittorrent installs, use one of these commands:")"
+  ui::error "  sudo seedboxctl qbittorrent add-user --user USER --password-stdin"
+  ui::error "  sudo seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin"
+  return 2
+}
+
 qbittorrent::load_install_args() {
   args::copy_value_alias web_port qb_web_port
   args::copy_value_alias web_port qb_port
@@ -437,6 +449,10 @@ qbittorrent::load_install_args() {
 
   QB_ROOTLESS=0
   qbittorrent::is_rootless_requested && QB_ROOTLESS=1
+  if [[ "${QB_ROOTLESS}" == "1" && ${EUID:-$(id -u)} -eq 0 ]]; then
+    qbittorrent::reject_rootless_as_root
+    return 2
+  fi
 
   local current_user requested_user requested_webui requested_source requested_mode
   current_user="$(id -un 2>/dev/null || printf user)"
@@ -923,52 +939,8 @@ qbittorrent::detect_network_tier() {
 }
 
 qbittorrent::detect_storage_kind() {
-  local path="${QB_DATA_DIR:-${QB_HOME:-/}}" source="" fstype="" src_lower="" fs_lower=""
-  if command -v findmnt >/dev/null 2>&1; then
-    source="$(findmnt -n -T "${path}" -o SOURCE 2>/dev/null | head -n1 || true)"
-    fstype="$(findmnt -n -T "${path}" -o FSTYPE 2>/dev/null | head -n1 || true)"
-  fi
-  src_lower="${source,,}"
-  fs_lower="${fstype,,}"
-
-  case "${fs_lower}" in
-    ceph|cephfs|fuse.ceph|rbd|rbd*) printf 'ceph\n'; return 0 ;;
-  esac
-  case "${src_lower}" in
-    *ceph*|*rbd*) printf 'ceph\n'; return 0 ;;
-    /dev/md*|*raid0*) printf 'hdd-raid0\n'; return 0 ;;
-  esac
-  if [[ "${src_lower}" == *nvme* ]]; then
-    printf 'nvme\n'
-    return 0
-  fi
-
-  local dev="${source}" name type rota saw_nonrot=0 saw_rot=0 saw_nvme=0 saw_raid=0
-  if [[ "${dev}" == /dev/* && -e "${dev}" ]] && command -v lsblk >/dev/null 2>&1; then
-    while IFS=' ' read -r name type rota; do
-      [[ -z "${name}" ]] && continue
-      [[ "${name}" == nvme* ]] && saw_nvme=1
-      [[ "${type}" == raid* ]] && saw_raid=1
-      [[ "${rota}" == "0" ]] && saw_nonrot=1
-      [[ "${rota}" == "1" ]] && saw_rot=1
-    done < <(lsblk -nr -o NAME,TYPE,ROTA "${dev}" 2>/dev/null || true)
-    (( saw_nvme )) && { printf 'nvme\n'; return 0; }
-    (( saw_raid )) && { printf 'hdd-raid0\n'; return 0; }
-    (( saw_nonrot )) && { printf 'ssd\n'; return 0; }
-    (( saw_rot )) && { printf 'hdd\n'; return 0; }
-  fi
-
-  local disk_name rotational
-  disk_name="$(lsblk -ndo NAME,TYPE 2>/dev/null | awk '$2=="disk" {print $1; exit}')"
-  if [[ -n "${disk_name}" ]]; then
-    [[ "${disk_name}" == nvme* ]] && { printf 'nvme\n'; return 0; }
-    if [[ -r "/sys/block/${disk_name}/queue/rotational" ]]; then
-      rotational="$(cat "/sys/block/${disk_name}/queue/rotational")"
-      [[ "${rotational}" == "0" ]] && { printf 'ssd\n'; return 0; }
-      [[ "${rotational}" == "1" ]] && { printf 'hdd\n'; return 0; }
-    fi
-  fi
-  return 1
+  local path="${QB_DATA_DIR:-${QB_HOME:-/}}"
+  storage::qbittorrent_kind_for_path "${path}"
 }
 
 qbittorrent::auto_tuning_profile() {

@@ -14,6 +14,8 @@ profiles::dedicated_usage() {
 专用服务器选项：
   --components qbittorrent[,autobrr,autoremove-torrents,vertex,tuning,bbr]
   --no-tuning
+  --storage-path 路径
+  --disk-scheduler-all
   --password-stdin | --password-file 文件 | --password 密码
   --cache MiB
   --qb-tuning-profile PROFILE
@@ -38,6 +40,8 @@ Usage:
 Dedicated options:
   --components qbittorrent[,autobrr,autoremove-torrents,vertex,tuning,bbr]
   --no-tuning
+  --storage-path PATH
+  --disk-scheduler-all
   --password-stdin | --password-file FILE | --password PASSWORD
   --cache MIB
   --qb-tuning-profile PROFILE
@@ -89,9 +93,37 @@ profiles::csv_remove() {
   printf '%s\n' "${output}"
 }
 
+profiles::validate_dedicated_components() {
+  local csv="$1" item valid=0
+  IFS=',' read -r -a _profile_csv_parts <<<"${csv}"
+  for item in "${_profile_csv_parts[@]}"; do
+    item="${item// /}"
+    [[ -z "${item}" ]] && continue
+    case "${item}" in
+      qbittorrent|autobrr|autoremove-torrents|vertex|tuning|bbr)
+        valid=1
+        ;;
+      *)
+        ui::error "$(ui::tr "未知安装组件：${item}" "Unknown install component: ${item}")"
+        ui::error "$(ui::tr "有效组件：qbittorrent,autobrr,autoremove-torrents,vertex,tuning,bbr" "Valid components: qbittorrent,autobrr,autoremove-torrents,vertex,tuning,bbr")"
+        return 2
+        ;;
+    esac
+  done
+  if (( valid == 0 )); then
+    ui::error "$(ui::tr "没有选择任何组件。" "No install components selected.")"
+    return 2
+  fi
+}
+
 profiles::dedicated_install() {
   args::parse "$@"
   args::has help && { profiles::dedicated_usage; return 0; }
+  if ((${#POSITIONAL[@]} > 0)); then
+    ui::error "$(ui::tr "dedicated install 不接受位置参数：$(args::format_positionals)" "dedicated install does not accept positional arguments: $(args::format_positionals)")"
+    ui::error "$(ui::tr "请使用 --components 指定组件。" "Use --components to choose components.")"
+    return 2
+  fi
   log::init install-dedicated
   local components password_cache_created=0
   components="$(args::get components qbittorrent,tuning)"
@@ -110,6 +142,7 @@ profiles::dedicated_install() {
   if [[ -n "$(args::get bbr_algo)" ]] && ! args::has no_bbr; then
     components="$(profiles::csv_add "${components}" bbr)"
   fi
+  profiles::validate_dedicated_components "${components}" || return $?
 
   ui::heading "$(ui::tr "专用 seedbox 安装" "Dedicated seedbox install")"
   ui::kv "$(ui::tr "组件" "Components")" "${components}"
