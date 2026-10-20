@@ -56,7 +56,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
-  -q 5.2.2 -l v2.0.13 \
+  -q 5.2.4 -l v2.0.15 \
   -b -v -r \
   -x
 
@@ -68,7 +68,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
-  -q 5.2.2 -l v2.0.13 \
+  -q 5.2.4 -l v2.0.15 \
   --service-mode auto
 
 ~/.local/bin/seedboxctl --lang zh-CN version
@@ -77,7 +77,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 	1. -u：Linux 用户名；rootless 模式下作为 WebUI 用户名
 	2. -p：密码
 	3. -c：qBittorrent 缓存大小，单位 MiB
-	4. -q：qBittorrent 版本，例如 5.2.2
+	4. -q：qBittorrent 版本，例如 5.2.4 或 5.3.0
 	5. -l：libtorrent 版本，例如 v1.2.20
 	6. -b：安装 autobrr（需要 root）
 	7. -v：安装 Vertex（需要 root）
@@ -153,8 +153,8 @@ printf '%s' 'change-this-password' | seedboxctl --lang zh-CN qbittorrent install
   --password-stdin \
   --webui-username jerry048 \
   --source static \
-  --qb-version 5.2.2 \
-  --libtorrent-version v2.0.13 \
+  --qb-version 5.2.4 \
+  --libtorrent-version v2.0.15 \
   --cache 3072 \
   --web-port 8080 \
   --incoming-port 45000 \
@@ -503,8 +503,8 @@ printf '%s' 'change-this-password' | sudo seedboxctl --lang zh-CN qbittorrent up
   --user jerry048 \
   --password-stdin \
   --source static \
-  --qb-version 5.2.2 \
-  --libtorrent-version v2.0.13
+  --qb-version 5.2.4 \
+  --libtorrent-version v2.0.15
 ```
 
 非破坏性卸载：

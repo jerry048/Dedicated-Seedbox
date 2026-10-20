@@ -773,7 +773,15 @@ qbittorrent::password_args_supplied() {
 qbittorrent::existing_password_line() {
   local config="${1:-${QB_CONFIG}}"
   [[ -r "${config}" ]] || return 1
-  grep -E '^[[:space:]]*WebUI\\Password(_PBKDF2|_ha1)?=' "${config}" | tail -n1 | sed 's/^[[:space:]]*//'
+  # qBittorrent 5.3 moved these keys from [Preferences] to [WebUI].
+  # Return the legacy spelling so existing hash validation stays version-neutral.
+  awk '
+    /^\[/ { section=$0; sub(/\r$/, "", section); next }
+    { sub(/^[[:space:]]*/, ""); sub(/\r$/, "") }
+    section == "[Preferences]" && /^WebUI\\Password(_PBKDF2|_ha1)?=/ { line=$0 }
+    section == "[WebUI]" && /^Password(_PBKDF2|_ha1)?=/ { line="WebUI\\" $0 }
+    END { if (line != "") print line }
+  ' "${config}"
 }
 
 qbittorrent::password_line_matches_family() {
@@ -1103,7 +1111,7 @@ qbittorrent::write_config_file() {
 }
 
 qbittorrent::write_config() {
-  local aio low_buffer buffer buffer_factor family password_line tuning_extra
+  local aio low_buffer buffer buffer_factor family password_line tuning_extra webui_config
   qbittorrent::install_instance_dirs
   qbittorrent::resolve_tuning_values || return $?
   aio="${QB_TUNE_ASYNC_IO_THREADS}"
@@ -1116,6 +1124,14 @@ qbittorrent::write_config() {
     password_line="${QB_PASSWORD_LINE_OVERRIDE}"
   else
     password_line="$(qbittorrent::password_config_line "${QB_WEBUI_USERNAME}" "${QB_PASSWORD}" "${QB_VERSION:-5}")"
+  fi
+
+  if qbittorrent::version_ge "${QB_VERSION:-5}" "5.3.0"; then
+    webui_config="$(printf '[WebUI]\n%s\nPort=%s\nUsername=%s\n' \
+      "${password_line#WebUI\\}" "${QB_WEB_PORT}" "${QB_WEBUI_USERNAME}")"
+  else
+    webui_config="$(printf '[Preferences]\n%s\nWebUI\\Port=%s\nWebUI\\Username=%s\n' \
+      "${password_line}" "${QB_WEB_PORT}" "${QB_WEBUI_USERNAME}")"
   fi
 
   case "${family}" in
@@ -1191,10 +1207,7 @@ Accepted=true
 [Network]
 Cookies=@Invalid()
 
-[Preferences]
-${password_line}
-WebUI\\Port=${QB_WEB_PORT}
-WebUI\\Username=${QB_WEBUI_USERNAME}
+${webui_config}
 EOF_CONF
       ;;
   esac

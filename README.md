@@ -53,7 +53,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
-  -q 5.2.2 -l v2.0.13 \
+  -q 5.2.4 -l v2.0.15 \
   -b -v -r \
   -x
 
@@ -65,7 +65,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   -u jerry048 \
   -p 'change-this-password' \
   -c 3072 \
-  -q 5.2.2 -l v2.0.13 \
+  -q 5.2.4 -l v2.0.15 \
   --service-mode auto
 
 ~/.local/bin/seedboxctl version
@@ -74,7 +74,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 	1. -u: Linux user; in rootless mode, WebUI username 
 	2. -p: password
 	3. -c: qBittorrent cache size in MiB
-	4. -q: qBittorrent versions, for example 5.2.2
+	4. -q: qBittorrent versions, for example 5.2.4 or 5.3.0
 	5. -l: libtorrent versions, for example v1.2.20
 	6. -b: Install autobrr; root required
 	7. -v: Install Vertex; root required
@@ -149,8 +149,8 @@ printf '%s' 'change-this-password' | seedboxctl qbittorrent install-self \
   --password-stdin \
   --webui-username jerry048 \
   --source static \
-  --qb-version 5.2.2 \
-  --libtorrent-version v2.0.13 \
+  --qb-version 5.2.4 \
+  --libtorrent-version v2.0.15 \
   --cache 3072 \
   --web-port 8080 \
   --incoming-port 45000 \
@@ -497,8 +497,8 @@ printf '%s' 'change-this-password' | sudo seedboxctl qbittorrent upgrade \
   --user jerry048 \
   --password-stdin \
   --source static \
-  --qb-version 5.2.2 \
-  --libtorrent-version v2.0.13
+  --qb-version 5.2.4 \
+  --libtorrent-version v2.0.15
 ```
 
 Non-destructive uninstall:
