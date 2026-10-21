@@ -34,9 +34,6 @@ defaults. Explicit settings in existing profiles still take precedence.
 
 - Builder: [`userdocs/qbittorrent-nox-static@546b0b6`](https://github.com/userdocs/qbittorrent-nox-static/commit/546b0b60d613dec875f34fc190a1123ca799783b).
 - Libtorrent patches: [`jerry048/Patch@d928969`](https://github.com/jerry048/Patch/tree/d928969c184d9f99de528151d0759c726ff7d2de/patches).
-- Exact qBittorrent patches: [`build-patches/qbittorrent`](build-patches/qbittorrent).
-  These are complete patches against the corresponding upstream release tags;
-  use them instead of, not on top of, the qBittorrent patches in `jerry048/Patch`.
 - Updated-build dependencies: Qt **6.8.3**, Boost **1.86.0**, OpenSSL **3.5.9**,
   and zlib **1.3.2**. Builds are fully static, with LTO and native-CPU-only
   optimizations disabled for portability and manageable build memory use.
