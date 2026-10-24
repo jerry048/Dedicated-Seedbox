@@ -27,6 +27,30 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   < /path/to/password.txt
 ```
 
+Main options (full list in the [CLI overview](docs/reference.md#cli-overview)):
+
+| Option                                                 | Description                                                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `--user USER`                                          | Linux account that owns the instance.                                                             |
+| `--password-stdin`, `--password-file FILE`             | Preferred password input.                                                                         |
+| `--components COMPONENT[,COMPONENT...]`                | Default `qbittorrent,tuning`; add `deluge`, `autobrr`, `vertex`, `autoremove-torrents`, or `bbr`. |
+| `--qb-version VERSION`, `--libtorrent-version VERSION` | Static pair from the manifest (see below).                                                        |
+| `--cache N`                                            | qBittorrent cache in MiB. Default `3072`.                                                         |
+| `--web-port PORT`, `--incoming-port PORT`              | Defaults `8080` and `45000`.                                                                      |
+| `--bbr-algo ALGO`                                      | BBR variant (see below).                                                                          |
+
+Available qBittorrent/libtorrent pairs:
+
+| qBittorrent                                 | libtorrent         |
+| ------------------------------------------- | ------------------ |
+| `4.1.9.1`                                   | `1.1.14`           |
+| `4.2.5`, `4.3.9`                            | `1.2.20`           |
+| `4.4.5`, `4.5.5`, `4.6.7`, `5.0.5`, `5.1.4` | `1.2.20`, `2.0.15` |
+| `5.2.4`                                     | `1.2.20`, `2.0.15` |
+| `5.3.0`                                     | `1.2.20`, `2.1.2`  |
+
+BBR variants (`--bbr-algo`): `bbrv3`, `bbrx`, `bbrx_old`, `bbrw`, `bbr_brutal`, `bbrw_brutal`.
+
 ### Shared/rootless account
 
 Run as the intended Unix user, **without root or sudo**. This installs qBittorrent only:

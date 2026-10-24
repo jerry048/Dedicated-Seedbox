@@ -29,6 +29,30 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   < /path/to/password.txt
 ```
 
+主要选项（完整列表见 [CLI 概览](docs/reference.zh-CN.md#cli-overview)）：
+
+| 选项                                                   | 说明                                                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `--user USER`                                          | 拥有实例的 Linux 账号。                                                                           |
+| `--password-stdin`、`--password-file FILE`             | 推荐的密码输入方式。                                                                              |
+| `--components COMPONENT[,COMPONENT...]`                | 默认 `qbittorrent,tuning`；可加入 `deluge`、`autobrr`、`vertex`、`autoremove-torrents` 或 `bbr`。 |
+| `--qb-version VERSION`、`--libtorrent-version VERSION` | 清单中的静态组合（见下表）。                                                                      |
+| `--cache N`                                            | qBittorrent 缓存大小，单位 MiB。默认 `3072`。                                                     |
+| `--web-port PORT`、`--incoming-port PORT`              | 默认 `8080` 和 `45000`。                                                                          |
+| `--bbr-algo ALGO`                                      | BBR 变体（见下表）。                                                                              |
+
+可选的 qBittorrent/libtorrent 组合：
+
+| qBittorrent                                 | libtorrent         |
+| ------------------------------------------- | ------------------ |
+| `4.1.9.1`                                   | `1.1.14`           |
+| `4.2.5`、`4.3.9`                            | `1.2.20`           |
+| `4.4.5`、`4.5.5`、`4.6.7`、`5.0.5`、`5.1.4` | `1.2.20`、`2.0.15` |
+| `5.2.4`                                     | `1.2.20`、`2.0.15` |
+| `5.3.0`                                     | `1.2.20`、`2.1.2`  |
+
+BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_brutal`、`bbrw_brutal`。
+
 ### 共享/rootless 账号
 
 以实际运行实例的 Unix 用户执行，**不要使用 root 或 sudo**。只安装 qBittorrent：
