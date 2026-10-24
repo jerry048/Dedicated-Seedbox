@@ -429,7 +429,7 @@ def create(args, account, home, profile):
     write(
         profile / "web.conf",
         {
-            "interface": "127.0.0.1",
+            "interface": "0.0.0.0",
             "port": args.web_port,
             "https": False,
             "pwd_salt": salt,

@@ -39,11 +39,11 @@ case "$(uname -m)" in x86_64 | aarch64) ;; *)
 esac
 source /etc/os-release
 case "${ID}:${VERSION_ID}" in
-  debian:*) [[ "${VERSION_ID%%.*}" -ge 12 ]] ;;
-  ubuntu:*) [[ "${VERSION_ID%%.*}" -ge 22 ]] ;;
+  debian:*) [[ "${VERSION_ID%%.*}" -ge 11 ]] ;;
+  ubuntu:*) [[ "${VERSION_ID%%.*}" -ge 20 ]] ;;
   *) false ;;
 esac || {
-  echo 'Use Debian 12+ or Ubuntu 22.04+.' >&2
+  echo 'Use Debian 11+ or Ubuntu 20.04+.' >&2
   exit 1
 }
 # Bundled with the runtime, not fetched from a mutable branch during a build.

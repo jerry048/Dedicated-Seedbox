@@ -24,7 +24,7 @@ declare -g BBR_SCRIPT=""
 declare -g BBR_GENERIC_KERNEL_INSTALLED=0
 
 bbr::usage() {
-  printf '%s\n' "$(ui::tr '本地/远程安装器需 SHA-256 或明确 --allow-unverified-bbr-installer；bbrx_old 需显式 --bbr-raw-base。' 'Local/remote installers need SHA-256 or explicit --allow-unverified-bbr-installer; bbrx_old requires explicit --bbr-raw-base.')"
+  printf '%s\n' "$(ui::tr '本地/远程安装器需 SHA-256 或明确 --allow-unverified-bbr-installer；生产环境建议将 bbrx_old 的 --bbr-raw-base 固定到提交。' 'Local/remote installers need SHA-256 or explicit --allow-unverified-bbr-installer; pin bbrx_old --bbr-raw-base to a commit for production.')"
   if ui::zh; then
     cat <<'USAGE'
 用法：
@@ -188,10 +188,6 @@ bbr::preflight() {
     return 2
   }
   if [[ "${BBR_ALGO}" == bbrx_old ]]; then
-    [[ "${BBR_RAW_BASE}" != "${SEEDBOX_BBR_RAW_BASE}" ]] || {
-      ui::error "Unpublished bbrx_old requires an explicit local or published --bbr-raw-base."
-      return 2
-    }
     detect::load_os || return $?
     [[ "${SEEDBOX_OS_ID}:${SEEDBOX_OS_VERSION_ID:-}" != ubuntu:20.04* ]] || {
       ui::error "The bundled bbrx_old installer requires Ubuntu 22.04+ (or supported Debian)."

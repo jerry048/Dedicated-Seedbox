@@ -16,11 +16,13 @@ It uses the same lifecycle, instance state, progress, installer logs and monitor
 
 Deluge 1.3.15, Python 2.7, OpenSSL 1.1.1 and the compatible Python packages are unsupported. Pinning them makes the installation reproducible, **not secure or maintained**. Use this only for a workflow that specifically requires Deluge 1.3.15. The torrent engine still handles untrusted network traffic; private installation and systemd restrictions do not remove its vulnerabilities.
 
-For every version, WebUI and daemon RPC bind to **127.0.0.1 only**. Use an SSH tunnel. Do not expose them publicly or disable certificate verification. Outbound HTTPS uses the host's current CA certificate bundle; only the 1.3.15 runtime uses legacy TLS.
+For every version, new profiles bind WebUI to **0.0.0.0**, accessible at `http://SERVER_IP:8112` without an SSH tunnel. Daemon RPC remains bound to **127.0.0.1 only**. Restrict WebUI to trusted source addresses with a firewall; it uses HTTP by default, so use an HTTPS reverse proxy or trusted VPN/network where appropriate. Keep certificate verification enabled. Outbound HTTPS uses the host's current CA certificate bundle; only the 1.3.15 runtime uses legacy TLS.
 
 ## Install
 
-Requirements: root, a running systemd host, Debian 12+ or Ubuntu 22.04+. The build targets amd64 and arm64; only amd64 has been execution-tested, and ARM64 remains unverified. Container lifecycle tests use a private service-manager fixture; a separate Debian 13 VPS test covers genuine systemd and public torrent downloads. Reboot persistence, GTK and long-duration seeding are not covered. Compilation needs several GiB of free disk space and substantial RAM/CPU time; reduce `--jobs` to `1` on small machines. The build uses the distribution's current compiler and signed APT repositories for build tools. Legacy sources and wheels are pinned by SHA-256 in `sources.lock`; modern locks are described below.
+Requirements: root and a running systemd host. **Deluge 1.3.15** supports **Debian 11+ or Ubuntu 20.04+**; **Deluge 2.2.0** requires **Debian 12+ or Ubuntu 22.04+**. The build targets amd64 and arm64; only amd64 has been execution-tested, and ARM64 remains unverified. Container lifecycle tests use a private service-manager fixture; a separate Debian 13 VPS test covers genuine systemd and public torrent downloads. Reboot persistence, GTK and long-duration seeding are not covered. Compilation needs several GiB of free disk space and substantial RAM/CPU time; reduce `--jobs` to `1` on small machines. The build uses the distribution's current compiler and signed APT repositories for build tools. Legacy sources and wheels are pinned by SHA-256 in `sources.lock`; modern locks are described below.
+
+Older hosts need working, signed APT sources. Retired Debian 11 security packages are available from [Debian's archive](https://archive.debian.org/debian-security/); update the host's repository configuration if its retired security mirror returns 404. The installer does not rewrite APT sources or bypass signature verification. Installer compatibility does not restore upstream security maintenance for the legacy application stack or an end-of-life OS.
 
 Use the [main Quick Start](../../README.md#quick-start), selecting `--components deluge`, or use `seedboxctl` from a complete local checkout as below. A missing Unix account is created; an existing account must be non-root and own its real home directory, including custom homes outside `/home`.
 
@@ -59,15 +61,17 @@ New legacy profiles use 50 ltConfig settings, including a disk queue of **250 Mi
 
 ### Access
 
-On your own computer, replace `HOST` with the server address:
+Open `http://HOST:8112` using the server address and enter the password from your file. For access outside a trusted network, use the HTTPS URL of your reverse proxy instead. The installer does not open firewall ports or configure a reverse proxy.
+
+An SSH tunnel remains an optional way to access WebUI. On your own computer, replace `HOST` with the server address:
 
 ```bash
 ssh -N -L 8112:127.0.0.1:8112 USER@HOST
 ```
 
-Open `http://127.0.0.1:8112` locally and enter the password from your file. Use `ssh -p PORT` if SSH uses a nonstandard port.
+With this tunnel, open `http://127.0.0.1:8112` locally. Use `ssh -p PORT` if SSH uses a nonstandard port.
 
-The torrent port is TCP/UDP `45000` by default. Allow only the chosen torrent port through the host/provider firewall as needed; the installer does not change firewalls. When host tuning is active, install/upgrade/uninstall refresh reservations for managed Deluge WebUI, RPC and incoming ports together with qBittorrent ports, preserving external reservations and `net.ipv4.ip_local_port_range=1024 65535`.
+The torrent port is TCP/UDP `45000` by default. Allow the chosen torrent port through the host/provider firewall as needed, and permit WebUI TCP `8112` only from intended clients/proxies. RPC TCP `58846` stays local; the installer does not change firewalls. When host tuning is active, install/upgrade/uninstall refresh reservations for managed Deluge WebUI, RPC and incoming ports together with qBittorrent ports, preserving external reservations and `net.ipv4.ip_local_port_range=1024 65535`.
 
 ### Combined installation
 
@@ -120,13 +124,15 @@ sudo seedboxctl deluge build-runtime \
 
 An identical completed runtime is checked and reused. The runtime ID includes the source lock, build/check scripts, host distribution and architecture; do not copy a compiled runtime between distributions. A failed build keeps its build directory and incomplete prefix for inspection. After reviewing the failure and stopping any affected services, move the incomplete runtime aside before retrying; the installer does not recursively erase unknown runtime directories.
 
-An older **unpatched** runtime has a different fingerprint and will not be reused or overwritten. To adopt the patched legacy build, stop all Deluge instances sharing that runtime, retain the old runtime and private profile backups, move the old prefix aside, and run `seedboxctl deluge build-runtime` before reconciling instances with `upgrade`. This is a deliberate shared-runtime replacement, not an automatic live upgrade; retain the old runtime for manual recovery.
+A runtime built with different build scripts or patches has a different fingerprint and will not be reused or overwritten. To replace a legacy runtime, stop all Deluge instances sharing it, retain the old runtime and private profile backups, move the old prefix aside, and run `seedboxctl deluge build-runtime` before reconciling instances with `upgrade`. This is a deliberate shared-runtime replacement, not an automatic live upgrade; retain the old runtime for manual recovery.
 
 For offline source builds, place every exact file from `sources.lock` (legacy), or both modern common/host-architecture locks, in one directory and pass `--source-dir DIR`. Files are copied into a root-private workspace and checked before compilation. A missing source or checksum mismatch aborts; there is no integrity bypass. APT still needs the required packages locally or through configured repositories. Runtime assets live in `lib/components/deluge/`, orchestration in `lib/components/deluge.bash`, and owner-side settings operations in `lib/core/delugeconfig.py`; remote bootstrap fetches them with the main runtime.
 
 Existing profiles and old service templates require deliberate migration. Stop and back up the old installation, inspect its ownership, credentials and download paths, and keep session/torrent data intact. The installer does not convert between Deluge major versions or libtorrent ABIs, or import old sessions. Use a new Unix account or plan a manual migration; do not remove your old configuration just to get past the guard.
 
 ## Upgrade and uninstall
+
+Upgrades preserve saved network settings. To enable direct WebUI access for an existing loopback-only profile, stop both services and back up the settings; set `interface` to `"0.0.0.0"` in `web.conf`, preserving its version header. Then run `upgrade` below to reconcile the WebUI unit without a forced bind flag. Keeping `interface="127.0.0.1"` intentionally retains local-only WebUI access. RPC binding, credentials and TLS verification do not need to change.
 
 ```bash
 sudo seedboxctl deluge upgrade --user delugeuser
@@ -144,9 +150,11 @@ To deliberately remove active configuration too, add `--purge --yes`. Only `core
 
 ## Validation coverage
 
+Deluge **1.3.15 / libtorrent 1.1.14** passed clean native builds on amd64 `debian:11-slim` and `ubuntu:20.04`, including patched defaults, non-root daemon/WebUI, authenticated WebUI access through a non-loopback IP, settings-preserving upgrade, rollback, data-preserving purge, a SHA-256-verified local BitTorrent transfer and graceful restart. System Python was unchanged. Debian 11 used its signed security archive; service control in these container tests used a fixture, not genuine systemd.
+
 Both modern pairs passed clean native builds and lifecycle tests on amd64 `debian:12-slim`, `debian:13-slim`, `ubuntu:22.04` and `ubuntu:26.04`, including all patched defaults, saved settings, transfer/restart, recovery and data-preserving purge. Container service control was simulated.
 
-Debian 13 amd64 validation covers genuine non-root systemd services, loopback-only WebUI/RPC, journals, restart, pair-preserving upgrade, simultaneous ABI isolation and public Debian ISO downloads. Download hashes matched official SHA-256 and SHA-512 checksums retrieved over verified HTTPS; the checksum file's GPG signature was not independently verified. ARM64 execution and genuine Ubuntu systemd remain unverified.
+Debian 13 amd64 validation covers genuine non-root systemd services, WebUI/RPC, journals, restart, pair-preserving upgrade, simultaneous ABI isolation and public Debian ISO downloads. Download hashes matched official SHA-256 and SHA-512 checksums retrieved over verified HTTPS; the checksum file's GPG signature was not independently verified. ARM64 execution and genuine Ubuntu systemd remain unverified.
 
 ## Troubleshooting
 

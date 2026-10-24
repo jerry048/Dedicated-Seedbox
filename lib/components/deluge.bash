@@ -26,10 +26,10 @@ deluge::usage() {
   --password-file FILE        从私有文件读取 WebUI 密码
   --password PASSWORD         WebUI 密码；建议使用 stdin 或密码文件
 
-需要 root、systemd、Debian 12+ 或 Ubuntu 22.04+。不支持 rootless。
+需要 root 和 systemd；1.3.15 支持 Debian 11+/Ubuntu 20.04+，2.2.0 需要 Debian 12+/Ubuntu 22.04+。不支持 rootless。
 Deluge 1.3.15、Python 2 和旧版 TLS 已停止维护，使用前请阅读安全提示。
 2.2.0 使用独立 Python 3 和版本组合专用运行环境；libtorrent 2.x 不支持旧版磁盘缓存参数。
-WebUI/RPC 仅监听回环地址；远程访问请用 SSH 隧道。
+新配置的 WebUI 可通过服务器 IP 访问；RPC 仅监听回环地址。请限制 WebUI 的访问来源。
 upgrade 保留版本组合和设置；跨主版本/ABI 切换需手动迁移。卸载保留下载和会话数据；
 --purge 仅删除五个活动设置文件，保留插件、恢复快照和下载。
 USAGE
@@ -56,10 +56,10 @@ Install options:
   --password-file FILE        Read the WebUI password from a private file
   --password PASSWORD         WebUI password; prefer stdin or a password file
 
-Requires root, systemd, Debian 12+ or Ubuntu 22.04+; no rootless mode.
+Requires root and systemd; 1.3.15 supports Debian 11+/Ubuntu 20.04+, while 2.2.0 requires Debian 12+/Ubuntu 22.04+. No rootless mode.
 Deluge 1.3.15, Python 2 and legacy TLS are unsupported; review the security guidance.
 2.2.0 uses private Python 3 and pair-specific runtimes; libtorrent 2.x has no legacy disk cache option.
-WebUI/RPC bind to loopback only. Use an SSH tunnel for remote access.
+New profiles allow WebUI access through the server IP; RPC remains loopback-only. Restrict WebUI access to trusted sources.
 Upgrade preserves the selected pair/settings; major/ABI switches require manual migration. Uninstall keeps data;
 --purge removes only five active settings files, not plugins, snapshots or downloads.
 USAGE
@@ -75,7 +75,7 @@ deluge::require_root() {
 
 deluge::warn_legacy() {
   [[ "${DE_VERSION:-1.3.15}" == 1.3.15 ]] || return 0
-  ui::warn "$(ui::tr 'Deluge 1.3.15、Python 2 和旧版 TLS 均已停止维护；请勿公开 WebUI/RPC。' 'Deluge 1.3.15, Python 2 and legacy TLS are unsupported; do not publish WebUI/RPC.')"
+  ui::warn "$(ui::tr 'Deluge 1.3.15、Python 2 和旧版 TLS 均已停止维护；请将 WebUI 访问限制在可信来源。' 'Deluge 1.3.15, Python 2 and legacy TLS are unsupported; restrict WebUI access to trusted sources.')"
 }
 
 deluge::set_runtime() {
@@ -131,9 +131,11 @@ deluge::ensure_packages() {
 
 deluge::require_platform() (
   source /etc/os-release
+  local debian_min=12 ubuntu_min=22
+  if [[ "${DE_VERSION:-1.3.15}" == 1.3.15 ]]; then debian_min=11 ubuntu_min=20; fi
   case "${ID}:${VERSION_ID}" in
-    debian:*) [[ "${VERSION_ID%%.*}" -ge 12 ]] || return 2 ;;
-    ubuntu:*) [[ "${VERSION_ID%%.*}" -ge 22 ]] || return 2 ;;
+    debian:*) [[ "${VERSION_ID%%.*}" -ge "${debian_min}" ]] || return 2 ;;
+    ubuntu:*) [[ "${VERSION_ID%%.*}" -ge "${ubuntu_min}" ]] || return 2 ;;
     *) return 2 ;;
   esac
   case "$(uname -m)" in x86_64 | aarch64) ;; *) return 2 ;; esac
@@ -237,8 +239,8 @@ deluge::unit_text() {
   local kind="$1" executable=deluged options='-d -u 127.0.0.1'
   [[ "${kind}" != web ]] || {
     executable=deluge-web
-    options='-i 127.0.0.1'
-    [[ "${DE_VERSION:-1.3.15}" != 2.2.0 ]] || options='-d -i 127.0.0.1'
+    options=''
+    [[ "${DE_VERSION:-1.3.15}" != 2.2.0 ]] || options='-d'
   }
   cat <<EOF
 # Managed by seedboxctl: Deluge ${DE_VERSION:-1.3.15}.
@@ -259,7 +261,7 @@ Environment=PYTHONNOUSERSITE=1
 Environment=SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 Environment=SSL_CERT_DIR=/etc/ssl/certs
 UnsetEnvironment=PYTHONHOME PYTHONPATH LD_LIBRARY_PATH XDG_CONFIG_HOME XDG_DATA_HOME
-ExecStart=${DE_PREFIX:-/opt/deluge-1.3.15}/bin/${executable} ${options} -L info
+ExecStart=${DE_PREFIX:-/opt/deluge-1.3.15}/bin/${executable}${options:+ ${options}} -L info
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=45
@@ -476,10 +478,10 @@ deluge::write_config() {
 deluge::print_success() {
   ui::heading "$(ui::tr "Deluge ${DE_VERSION} / libtorrent ${DE_LT_VERSION} 已就绪" "Deluge ${DE_VERSION} / libtorrent ${DE_LT_VERSION} ready")"
   ui::kv "$(ui::tr 'Unix 用户' 'Unix user')" "${DE_USER}"
-  ui::kv WebUI "http://127.0.0.1:${DE_WEB_PORT}"
+  ui::kv WebUI "http://SERVER_IP:${DE_WEB_PORT}"
   ui::kv "$(ui::tr '配置' 'Config')" "${DE_CONFIG}"
   ui::kv "$(ui::tr '服务' 'Services')" "${DE_UNIT}, ${DE_WEB_UNIT}"
-  ui::pending "$(ui::tr '远程访问 WebUI 请使用 SSH 隧道；不要开放 WebUI/RPC 公网端口。' 'Use an SSH tunnel for remote WebUI access; do not expose WebUI/RPC publicly.')"
+  ui::pending "$(ui::tr '将 SERVER_IP 替换为服务器 IP；按需放行 WebUI 端口并限制访问来源。RPC 仍仅监听回环地址。' 'Replace SERVER_IP with the server IP; allow the WebUI port through the firewall as needed and restrict access to trusted sources. RPC remains loopback-only.')"
   ui::log_location
 }
 
@@ -529,7 +531,7 @@ deluge::install_steps() {
   deluge::load_install_args || return $?
   deluge::warn_legacy || return $?
   deluge::require_platform || {
-    ui::error "$(ui::tr 'Deluge 需要 Debian 12+ 或 Ubuntu 22.04+（amd64/arm64）。' 'Deluge requires Debian 12+ or Ubuntu 22.04+ (amd64/arm64).')"
+    ui::error "$(ui::tr 'Deluge 1.3.15 需要 Debian 11+/Ubuntu 20.04+；2.2.0 需要 Debian 12+/Ubuntu 22.04+（amd64/arm64）。' 'Deluge 1.3.15 requires Debian 11+/Ubuntu 20.04+; 2.2.0 requires Debian 12+/Ubuntu 22.04+ (amd64/arm64).')"
     return 2
   }
   systemd::require || return $?

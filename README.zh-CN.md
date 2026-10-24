@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.0
+# Dedicated-Seedbox V2.1.1
 
 [English](README.md) · [详细参考](docs/reference.zh-CN.md)
 
@@ -62,9 +62,9 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   < /path/to/password.txt
 ```
 
-省略版本参数仍选择旧版 **1.3.15 / 1.1.14**；仍会提示运行环境已停止维护，但不以此阻止安装。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
+省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd；会提示运行环境已停止维护，但不以此阻止安装。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
 
-WebUI/RPC 仅监听回环地址；用 SSH 隧道访问默认 **8112** 端口。默认和 rootless 配置不包含 Deluge。组合安装及[升级、卸载命令](Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)见详细指南。
+通过 `http://SERVER_IP:8112` 访问 WebUI，并将端口限制在可信来源；守护进程 RPC 仍仅监听回环地址。默认和 rootless 配置不包含 Deluge。组合安装及[升级、卸载命令](Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)见详细指南。
 
 <a id="upgrade-and-uninstall"></a>
 
@@ -92,7 +92,7 @@ sudo seedboxctl --lang zh-CN qbittorrent upgrade \
   --source distro
 ```
 
-**Rootless 静态安装：** 使用上方静态升级命令，但省略 `sudo` 和 `--user jerry048`，只管理自己的实例。发行版软件包操作需要 root。发行版升级失败后可能需要手动恢复软件包及配置，依赖不能自动回滚。降级或从 qBittorrent 4.1 升级前，尤其需要阅读[升级与恢复细节](docs/reference.zh-CN.md#upgrade-and-uninstall)。
+**Rootless 静态安装：** 使用上方静态升级命令，但省略 `sudo` 和 `--user jerry048`，只管理自己的实例。发行版软件包操作需要 root。发行版升级失败后可能需要手动恢复软件包及配置，依赖不能自动回滚。降级或从 qBittorrent 4.1 升级前，尤其需要阅读[qBittorrent 配置与升级说明](docs/reference.zh-CN.md#qbittorrent)。
 
 ### 卸载，保留配置和下载内容
 
@@ -145,9 +145,9 @@ Deluge 使用 `sudo seedboxctl --lang zh-CN deluge status --user delugeuser --ch
 - **WebUI 无法访问：** 检查安装器显示的地址、服务状态、防火墙以及端口是否被其他进程占用。
 - **安装/下载失败：** 查看失败步骤日志中的 APT 锁、DNS/网络故障、权限或校验和错误，不要仅为了继续安装而绕过完整性检查。
 - **最近的安装失败：** `seedboxctl logs installer` 查看最近运行；`seedboxctl logs installer --list` 列出保留记录。组件日志来源及实时跟踪见[日志查看](docs/reference.zh-CN.md#logs)。
-- **升级/恢复失败：** 保留错误中列出的备份及快照，不要反复重新安装或覆盖现有配置；按错误提示及[详细说明](docs/reference.zh-CN.md#upgrade-and-uninstall)恢复。
-- **安装界面与权限提示：** 见[界面语言、步骤进度及安全恢复说明](docs/reference.zh-CN.md#安装界面的语言与进度)。普通用户实例遇到权限问题时，不应直接改用 sudo 重装。
+- **升级/恢复失败：** 保留错误中列出的备份及快照，不要反复重新安装或覆盖现有配置；按错误提示及[详细说明](docs/reference.zh-CN.md#qbittorrent)恢复。
+- **安装界面与权限提示：** 安装器提示已本地化。普通用户实例遇到权限问题时，不应直接改用 sudo 重装。
 
-求助时请提供失败命令及相关安装步骤或服务日志，分享前先检查并脱敏。完整的[日志与状态路径](docs/reference.zh-CN.md#paths-logs-and-state)及[服务排查命令](docs/reference.zh-CN.md#troubleshooting)位于详细参考中。
+求助时请提供失败命令及相关安装步骤或服务日志，分享前先检查并脱敏。完整的[日志与状态路径](docs/reference.zh-CN.md#paths-logs-and-state)位于详细参考中。
 
 详细文档：[CLI 与别名](docs/reference.zh-CN.md#cli-overview) · [qBittorrent 选项](docs/reference.zh-CN.md#qbittorrent) · [系统调优](docs/reference.zh-CN.md#主机调优) · [可选组件](docs/reference.zh-CN.md#components)。

@@ -16,11 +16,13 @@
 
 Deluge 1.3.15、Python 2.7、OpenSSL 1.1.1 及兼容的 Python 依赖均已停止维护。固定版本可以让安装过程可复现，**不代表这些软件安全或仍受维护**。仅在确实需要 Deluge 1.3.15 的场景使用。BT 引擎仍会处理不可信的网络数据；私有运行环境和 systemd 限制无法消除其中的漏洞。
 
-所有版本的 WebUI 和守护进程 RPC 均**仅监听 127.0.0.1**。请通过 SSH 隧道访问，不要直接公开这些端口，也不要关闭证书验证。出站 HTTPS 使用主机当前的 CA 证书集合；仅 1.3.15 运行环境使用旧版 TLS。
+所有版本的新配置均将 WebUI 绑定到 **0.0.0.0**，可直接通过 `http://SERVER_IP:8112` 访问，无需 SSH 隧道。守护进程 RPC 仍**仅监听 127.0.0.1**。请用防火墙将 WebUI 限制在可信来源；WebUI 默认使用 HTTP，可按需使用 HTTPS 反向代理或可信 VPN/网络。请保持证书验证开启。出站 HTTPS 使用主机当前的 CA 证书集合；仅 1.3.15 运行环境使用旧版 TLS。
 
 ## 安装
 
-要求：root 权限、正常运行 systemd 的主机，以及 Debian 12+ 或 Ubuntu 22.04+。构建目标为 amd64 和 arm64；目前仅对 amd64 进行了执行验证，ARM64 尚未验证。容器生命周期测试使用私有服务管理模拟器，另在 Debian 13 VPS 上验证了真实 systemd 和公共种子下载；未覆盖主机重启后的持久性、GTK 及长期做种。编译需要数 GiB 可用磁盘空间，并消耗较多内存和 CPU 时间；小内存主机请将 `--jobs` 降为 `1`。构建工具来自发行版的签名 APT 软件源，使用当前编译器。旧版源码和 wheel 的 SHA-256 固定在 `sources.lock` 中；现代版本的清单见下文。
+要求：root 权限和正常运行 systemd 的主机。**Deluge 1.3.15** 支持 **Debian 11+ 或 Ubuntu 20.04+**；**Deluge 2.2.0** 需要 **Debian 12+ 或 Ubuntu 22.04+**。构建目标为 amd64 和 arm64；仅对 amd64 进行了执行验证，ARM64 尚未验证。容器生命周期测试使用私有服务管理模拟器，另在 Debian 13 VPS 上验证了真实 systemd 和公共种子下载；未覆盖主机重启后的持久性、GTK 及长期做种。编译需要数 GiB 可用磁盘空间，并消耗较多内存和 CPU 时间；小内存主机请将 `--jobs` 降为 `1`。构建工具来自发行版的签名 APT 软件源，使用当前编译器。旧版源码和 wheel 的 SHA-256 固定在 `sources.lock` 中；现代版本的清单见下文。
+
+旧系统需要可用且经过签名验证的 APT 软件源。已退役的 Debian 11 安全更新软件包可从 [Debian 存档](https://archive.debian.org/debian-security/)取得；退役的安全更新镜像返回 404 时，请先调整主机的软件源配置。安装器不会改写 APT 软件源，也不会绕过签名验证。安装器兼容并不代表旧版应用组件或已结束支持的操作系统重新获得了上游安全维护。
 
 可按[主指南快速开始](../../README.zh-CN.md#quick-start)，显式选择 `--components deluge`；或在完整本地副本中使用下方命令。不存在的 Unix 账号会自动创建；已有账号必须为非 root 用户，并持有真实主目录，也支持 `/home` 之外的自定义主目录。
 
@@ -59,15 +61,17 @@ Deluge 2.2.0 编译独立的 **CPython 3.11.17** 和 **Boost 1.83.0**，Python/l
 
 ### 访问
 
-在自己的电脑上执行以下命令，将 `HOST` 替换为服务器地址：
+使用服务器地址打开 `http://HOST:8112`，输入密码文件中的密码。在可信网络之外访问时，请改用 HTTPS 反向代理的地址。安装器不开放防火墙端口，也不配置反向代理。
+
+SSH 隧道仍可作为访问 WebUI 的可选方式。在自己的电脑上执行以下命令，将 `HOST` 替换为服务器地址：
 
 ```bash
 ssh -N -L 8112:127.0.0.1:8112 USER@HOST
 ```
 
-随后在本机打开 `http://127.0.0.1:8112`，输入密码文件中的密码。如 SSH 使用非默认端口，请加上 `ssh -p PORT`。
+建立隧道后，在本机打开 `http://127.0.0.1:8112`。如 SSH 使用非默认端口，请加上 `ssh -p PORT`。
 
-BT 端口默认为 TCP/UDP `45000`。按需在主机和服务商防火墙中放行选定的 BT 端口；安装器不修改防火墙。主机调优启用时，安装、升级和卸载会将受管 Deluge 的 WebUI、RPC、入站端口与 qBittorrent 端口一起刷新到保留列表，保留外部保留项，并保持 `net.ipv4.ip_local_port_range=1024 65535`。
+BT 端口默认为 TCP/UDP `45000`。按需在主机和服务商防火墙中放行选定的 BT 端口，并将 WebUI TCP `8112` 的来源限制为指定客户端/代理。RPC TCP `58846` 仍仅供本地使用；安装器不修改防火墙。主机调优启用时，安装、升级和卸载会将受管 Deluge 的 WebUI、RPC、入站端口与 qBittorrent 端口一起刷新到保留列表，保留外部保留项，并保持 `net.ipv4.ip_local_port_range=1024 65535`。
 
 ### 组合安装
 
@@ -120,7 +124,7 @@ sudo seedboxctl --lang zh-CN deluge build-runtime \
 
 对于完全一致且已构建完成的运行环境，安装器会检查后复用。运行环境标识包含源码清单、构建与检查脚本、主机发行版和架构；不要在不同发行版之间复制编译产物。构建失败时会保留构建目录和未完成的安装目录供检查。确认失败原因并停止相关服务后，请先将未完成的运行环境移到其他位置，再重试；安装器不会递归删除来源不明的运行目录。
 
-旧的**未打补丁**运行环境指纹不同，不会被复用或覆盖。如需采用带补丁的旧版构建，请停止共用该运行环境的全部 Deluge 实例，保留旧运行环境与私有配置备份，将旧安装目录移到其他位置，再执行 `seedboxctl deluge build-runtime`，随后用 `upgrade` 更新各实例。这是需要明确操作的共用运行环境替换，不是自动在线升级；请保留旧版本以便手动恢复。
+使用不同构建脚本或补丁生成的运行环境指纹不同，不会被复用或覆盖。替换旧版运行环境时，请停止共用该运行环境的全部 Deluge 实例，保留旧运行环境与私有配置备份，将旧安装目录移到其他位置，再执行 `seedboxctl deluge build-runtime`，随后用 `upgrade` 更新各实例。这是需要明确操作的共用运行环境替换，不是自动在线升级；请保留旧版本以便手动恢复。
 
 使用本地源码构建时，将旧版 `sources.lock` 或现代版本的 common 与主机架构两份清单中的全部文件放到同一目录，并指定 `--source-dir DIR`。编译前会复制到 root 私有工作目录中重新校验。缺少文件或校验不符都会中止，不提供绕过完整性校验的选项。APT 仍需能取得所需软件包。运行环境文件在 `lib/components/deluge/`，编排代码在 `lib/components/deluge.bash`，用户侧配置助手在 `lib/core/delugeconfig.py`；远程引导会随主运行环境一起获取这些文件。
 
@@ -129,6 +133,8 @@ sudo seedboxctl --lang zh-CN deluge build-runtime \
 <a id="upgrade-and-uninstall"></a>
 
 ## 升级与卸载
+
+升级会保留已保存的网络设置。已有仅回环配置需要直接访问 WebUI 时，请先停止两个服务并备份设置，将 `web.conf` 的 `interface` 设为 `"0.0.0.0"`，保留版本头。然后运行下方 `upgrade` 命令，更新 WebUI 服务并移除强制绑定参数。保留 `interface="127.0.0.1"` 则继续限制 WebUI 为本地访问。RPC 绑定、凭据和 TLS 验证均无需修改。
 
 ```bash
 sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser
@@ -146,9 +152,11 @@ sudo seedboxctl --lang zh-CN deluge uninstall --user delugeuser
 
 ## 验证范围
 
+**Deluge 1.3.15 / libtorrent 1.1.14** 在 amd64 `debian:11-slim` 和 `ubuntu:20.04` 上通过了全新原生构建，验证涵盖补丁默认值、非 root daemon/WebUI、通过非回环 IP 登录 WebUI、保留设置的升级、回滚、保留数据的清理、SHA-256 校验通过的本地 BitTorrent 传输及正常重启。系统 Python 保持不变。Debian 11 使用了经过签名验证的安全更新存档；这些容器测试的服务管理使用模拟器，不是真实 systemd。
+
 两组现代版本均在 amd64 `debian:12-slim`、`debian:13-slim`、`ubuntu:22.04` 和 `ubuntu:26.04` 上通过了全新原生构建及生命周期测试，包括全部补丁默认值、已有设置保留、传输与服务重启、恢复及保留数据的清理。容器中的服务管理为模拟环境。
 
-Debian 13 amd64 验证涵盖真实的非 root systemd 服务、仅回环监听的 WebUI/RPC、journal、服务重启、保留版本组合的升级、两种 ABI 同时运行的隔离，以及公共 Debian ISO 下载。下载文件的 SHA-256 和 SHA-512 均与通过已验证 HTTPS 获取的官方校验值一致；未独立验证校验文件的 GPG 签名。ARM64 执行和真实 Ubuntu systemd 尚未验证。
+Debian 13 amd64 验证涵盖真实的非 root systemd 服务、WebUI/RPC、journal、服务重启、保留版本组合的升级、两种 ABI 同时运行的隔离，以及公共 Debian ISO 下载。下载文件的 SHA-256 和 SHA-512 均与通过已验证 HTTPS 获取的官方校验值一致；未独立验证校验文件的 GPG 签名。ARM64 执行和真实 Ubuntu systemd 尚未验证。
 
 ## 排查问题
 

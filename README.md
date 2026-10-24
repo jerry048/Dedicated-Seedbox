@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.0
+# Dedicated-Seedbox V2.1.1
 
 [简体中文](README.zh-CN.md) · [Advanced reference](docs/reference.md)
 
@@ -60,9 +60,9 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   < /path/to/password.txt
 ```
 
-Omitting version options still selects legacy **1.3.15 / 1.1.14**; its unsupported-runtime warning is informational, not an installation gate. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).
+Omitting version options selects legacy **1.3.15 / 1.1.14**, supported on Debian 11+/Ubuntu 20.04+ with root and systemd; its unsupported-runtime warning is informational, not an installation gate. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).
 
-WebUI/RPC stay on loopback; use an SSH tunnel to WebUI port **8112**. Deluge is not included in the default or rootless profiles. See the guide for combined installs and [lifecycle commands](Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall).
+Open `http://SERVER_IP:8112` for WebUI access and restrict the port to trusted sources; daemon RPC stays on loopback. Deluge is not included in the default or rootless profiles. See the guide for combined installs and [lifecycle commands](Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall).
 
 ## Upgrade and uninstall
 
@@ -88,7 +88,7 @@ sudo seedboxctl qbittorrent upgrade \
   --source distro
 ```
 
-**Rootless static installs:** use the static upgrade command without `sudo` and `--user jerry048`; only manage your own instance. Distro-package operations require root. A failed distro upgrade may require manual package/config recovery; package dependencies cannot be automatically rolled back. See [upgrade and recovery details](docs/reference.md#upgrade-and-uninstall), especially when downgrading or upgrading from qBittorrent 4.1.
+**Rootless static installs:** use the static upgrade command without `sudo` and `--user jerry048`; only manage your own instance. Distro-package operations require root. A failed distro upgrade may require manual package/config recovery; package dependencies cannot be automatically rolled back. See [qBittorrent configuration and upgrade details](docs/reference.md#qbittorrent), especially when downgrading or upgrading from qBittorrent 4.1.
 
 ### Uninstall while keeping configuration and downloads
 
@@ -139,9 +139,9 @@ For Deluge, use `sudo seedboxctl deluge status --user delugeuser --check` and `s
 - **WebUI unavailable:** check the printed address, service status, firewall, and whether another process owns the port.
 - **Install/download failure:** inspect the failed step's log for APT locks, DNS/network errors, permissions, or checksum mismatches. Do not bypass integrity checks just to make an installation continue.
 - **Recent installer failure:** `seedboxctl logs installer` shows the latest run; `seedboxctl logs installer --list` lists retained runs. For component sources and live following, see [log viewing](docs/reference.md#logs).
-- **Upgrade/recovery failure:** keep the reported backups and snapshots. Do not repeatedly reinstall or overwrite the existing config; follow the recovery error and [detailed guidance](docs/reference.md#upgrade-and-uninstall).
-- **Installer display and permissions:** see [language, progress, and safe recovery guidance](docs/reference.md#installer-language-and-progress). Rootless permission errors are not an instruction to rerun with sudo.
+- **Upgrade/recovery failure:** keep the reported backups and snapshots. Do not repeatedly reinstall or overwrite the existing config; follow the recovery error and [detailed guidance](docs/reference.md#qbittorrent).
+- **Installer display and permissions:** installer messages are localized. Rootless permission errors are not an instruction to rerun with sudo.
 
-When asking for help, include the failed command and the relevant installer-step or service logs. Review/redact sensitive information before sharing. Full [log paths and state locations](docs/reference.md#paths-logs-and-state) and [service troubleshooting commands](docs/reference.md#troubleshooting) are in the reference.
+When asking for help, include the failed command and the relevant installer-step or service logs. Review/redact sensitive information before sharing. Full [log paths and state locations](docs/reference.md#paths-logs-and-state) are in the reference.
 
 Detailed documentation: [CLI and aliases](docs/reference.md#cli-overview) · [qBittorrent options](docs/reference.md#qbittorrent) · [tuning](docs/reference.md#host-tuning) · [optional components](docs/reference.md#components).
