@@ -28,8 +28,8 @@ systemd::restart() {
 
 systemd::stop_disable() {
   local unit="$1"
-  systemctl stop "${unit}" 2>/dev/null || true
-  systemctl disable "${unit}" 2>/dev/null || true
+  systemctl stop "${unit}" || return $?
+  systemctl disable "${unit}" || return $?
 }
 
 systemd::is_active() {
@@ -44,6 +44,6 @@ systemd::journal_cmd() {
 
 systemd::write_unit() {
   local unit="$1"
-  fs::write_file "/etc/systemd/system/${unit}" 0644 root root
+  fs::write_file "/etc/systemd/system/${unit}" 0644 root root || return $?
   systemd::daemon_reload
 }

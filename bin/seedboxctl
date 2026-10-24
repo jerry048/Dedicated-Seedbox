@@ -21,6 +21,7 @@ _seedboxctl_entrypoint() {
   script_dir="$(_seedboxctl_entrypoint_dir)"
   export SEEDBOX_ROOT="$(cd -- "${script_dir}/.." && pwd -P)"
   source "${SEEDBOX_ROOT}/lib/core/bootstrap.bash"
+  trap '_seedbox_exit_rc=$?; ui::finish "${_seedbox_exit_rc}" || true; exit "${_seedbox_exit_rc}"' EXIT
   seedbox::bootstrap "$@"
 }
 

@@ -12,17 +12,17 @@ validate::username() {
 
 validate::port() {
   local port="$1"
-  [[ "${port}" =~ ^[0-9]+$ ]] && (( port >= 1 && port <= 65535 ))
+  [[ "${port}" =~ ^[0-9]+$ ]] && ((port >= 1 && port <= 65535))
 }
 
 validate::unprivileged_port() {
   local port="$1"
-  validate::port "${port}" && (( port >= 1024 ))
+  validate::port "${port}" && ((port >= 1024))
 }
 
 validate::positive_int() {
   local value="$1"
-  [[ "${value}" =~ ^[0-9]+$ ]] && (( value > 0 ))
+  [[ "${value}" =~ ^[0-9]+$ ]] && ((value > 0))
 }
 
 validate::component_name() {

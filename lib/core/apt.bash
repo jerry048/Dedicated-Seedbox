@@ -16,7 +16,7 @@ apt::package_installed() {
 apt::wait_for_dpkg() {
   local waited=0 max_wait="${1:-120}"
   while command -v fuser >/dev/null 2>&1 && fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do
-    if (( waited >= max_wait )); then
+    if ((waited >= max_wait)); then
       ui::error "APT/dpkg lock is still held after ${max_wait}s."
       return 1
     fi
@@ -26,14 +26,20 @@ apt::wait_for_dpkg() {
 }
 
 apt::update() {
-  apt::available || { ui::error "apt-get/dpkg-query not found"; return 1; }
-  apt::wait_for_dpkg 120
+  apt::available || {
+    ui::error "apt-get/dpkg-query not found"
+    return 1
+  }
+  apt::wait_for_dpkg 120 || return $?
   DEBIAN_FRONTEND=noninteractive apt-get update -y
 }
 
 apt::install() {
-  apt::available || { ui::error "apt-get/dpkg-query not found"; return 1; }
-  apt::wait_for_dpkg 120
+  apt::available || {
+    ui::error "apt-get/dpkg-query not found"
+    return 1
+  }
+  apt::wait_for_dpkg 120 || return $?
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@"
 }
 

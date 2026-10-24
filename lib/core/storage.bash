@@ -45,7 +45,7 @@ storage::fstype_is_ceph() {
   local fstype
   fstype="$(storage::lower "${1:-}")"
   case "${fstype}" in
-    ceph|cephfs|fuse.ceph|rbd|rbd*) return 0 ;;
+    ceph | cephfs | fuse.ceph | rbd | rbd*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -54,7 +54,7 @@ storage::source_is_ceph() {
   local source
   source="$(storage::lower "${1:-}")"
   case "${source}" in
-    *ceph*|*rbd*) return 0 ;;
+    *ceph* | *rbd*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -63,11 +63,12 @@ storage::fstype_is_network_or_fuse() {
   local fstype
   fstype="$(storage::lower "${1:-}")"
   case "${fstype}" in
-    ceph|cephfs|fuse.ceph|rbd|rbd*|\
-    nfs|nfs4|cifs|smb|smb2|smb3|smbfs|sshfs|fuse.sshfs|\
-    fuse.rclone|fuse.mergerfs|fuse.s3fs|fuse.gcsfuse|fuse.goofys|\
-    glusterfs|lustre|davfs|davfs2|fuse.*)
-      return 0 ;;
+    ceph | cephfs | fuse.ceph | rbd | rbd* | \
+      nfs | nfs4 | cifs | smb | smb2 | smb3 | smbfs | sshfs | fuse.sshfs | \
+      fuse.rclone | fuse.mergerfs | fuse.s3fs | fuse.gcsfuse | fuse.goofys | \
+      glusterfs | lustre | davfs | davfs2 | fuse.*)
+      return 0
+      ;;
     *) return 1 ;;
   esac
 }
@@ -90,7 +91,7 @@ storage::path_is_network_or_fuse() {
     return 0
   fi
   case "${source_l}" in
-    *ceph*|*rbd*|*://*|//*) return 0 ;;
+    *ceph* | *rbd* | *://* | //*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -103,10 +104,13 @@ storage::source_device_for_path() {
   [[ -n "${source}" ]] || return 1
 
   case "${source}" in
-    UUID=*|LABEL=*|PARTUUID=*|PARTLABEL=*)
+    UUID=* | LABEL=* | PARTUUID=* | PARTLABEL=*)
       if storage::have findfs; then
         dev="$(findfs "${source}" 2>/dev/null || true)"
-        [[ -n "${dev}" ]] && { printf '%s\n' "${dev}"; return 0; }
+        [[ -n "${dev}" ]] && {
+          printf '%s\n' "${dev}"
+          return 0
+        }
       fi
       ;;
     /dev/*)
@@ -123,7 +127,8 @@ storage::block_name_from_device() {
   local dev="$1" name
   [[ -n "${dev}" ]] || return 1
   storage::have lsblk || return 1
-  name="$(lsblk -dnro NAME -- "${dev}" 2>/dev/null | head -n1 || true)"
+  # NAME may be an LVM-friendly name; sysfs traversal requires KNAME (dm-N).
+  name="$(lsblk -dnro KNAME -- "${dev}" 2>/dev/null | head -n1 || true)"
   [[ -n "${name}" ]] || return 1
   printf '%s\n' "${name}"
 }
@@ -135,9 +140,11 @@ storage::block_type() {
 }
 
 storage::parent_block_name() {
-  local name="$1"
+  local name="$1" parent
   storage::have lsblk || return 1
-  lsblk -dnro PKNAME -- "/dev/${name}" 2>/dev/null | head -n1
+  parent="$(lsblk -dnro PKNAME -- "/dev/${name}" 2>/dev/null | head -n1)"
+  [[ -n "${parent}" ]] || return 1
+  storage::block_name_from_device "/dev/${parent}"
 }
 
 storage::stack_block_names_from_name() {
@@ -175,7 +182,7 @@ storage::leaf_devices_from_name() {
       slave="$(basename -- "${slave_path}")"
       storage::leaf_devices_from_name "${slave}" "${seen} ${name}"
     done
-    (( found )) && return 0
+    ((found)) && return 0
   fi
 
   type="$(storage::block_type "${name}" 2>/dev/null || true)"
@@ -204,7 +211,11 @@ storage::zfs_leaf_devices_for_path() {
   [[ -n "${source}" ]] || return 1
   pool="${source%%/*}"
   [[ -n "${pool}" ]] || return 1
-  zpool status -P "${pool}" 2>/dev/null | awk '$1 ~ /^\/dev\// {print $1}' | while IFS= read -r dev; do
+  # Auxiliary log/cache/spare/special devices do not identify the data tier.
+  zpool status -P "${pool}" 2>/dev/null | awk '
+    $1 ~ /^(logs|cache|spares|special|dedup)$/ {aux=1; next}
+    $1 ~ /^\/dev\// && !aux {print $1}
+  ' | while IFS= read -r dev; do
     name="$(storage::block_name_from_device "${dev}" 2>/dev/null || true)"
     [[ -n "${name}" ]] || continue
     storage::leaf_devices_from_name "${name}"
@@ -268,7 +279,7 @@ storage::path_has_md_raid0() {
   while IFS= read -r level; do
     level_l="$(storage::lower "${level}")"
     case "${level_l}" in
-      raid0|0|stripe|striped) return 0 ;;
+      raid0 | 0 | stripe | striped) return 0 ;;
     esac
   done < <(storage::md_levels_for_path "${path}" 2>/dev/null || true)
   return 1
@@ -278,11 +289,17 @@ storage::device_rotational() {
   local dev="$1" value
   if [[ -r "/sys/block/${dev}/queue/rotational" ]]; then
     value="$(cat "/sys/block/${dev}/queue/rotational" 2>/dev/null || true)"
-    [[ "${value}" =~ ^[01]$ ]] && { printf '%s\n' "${value}"; return 0; }
+    [[ "${value}" =~ ^[01]$ ]] && {
+      printf '%s\n' "${value}"
+      return 0
+    }
   fi
   if storage::have lsblk; then
     value="$(lsblk -dnro ROTA -- "/dev/${dev}" 2>/dev/null | head -n1 || true)"
-    [[ "${value}" =~ ^[01]$ ]] && { printf '%s\n' "${value}"; return 0; }
+    [[ "${value}" =~ ^[01]$ ]] && {
+      printf '%s\n' "${value}"
+      return 0
+    }
   fi
   return 1
 }
@@ -318,9 +335,10 @@ storage::is_virtualized() {
   info="$(cat /sys/class/dmi/id/sys_vendor /sys/class/dmi/id/product_name 2>/dev/null || true)"
   info="$(storage::lower "${info}")"
   case "${info}" in
-    *kvm*|*qemu*|*vmware*|*virtualbox*|*xen*|*bochs*|*hyper-v*|*microsoft*virtual*|\
-    *amazon*ec2*|*google*compute*|*digitalocean*|*openstack*|*parallels*|*bhyve*|*oracle*cloud*)
-      return 0 ;;
+    *kvm* | *qemu* | *vmware* | *virtualbox* | *xen* | *bochs* | *hyper-v* | *microsoft*virtual* | \
+      *amazon*ec2* | *google*compute* | *digitalocean* | *openstack* | *parallels* | *bhyve* | *oracle*cloud*)
+      return 0
+      ;;
     *) return 1 ;;
   esac
 }
@@ -338,8 +356,9 @@ storage::device_has_local_nvme_evidence() {
   meta="$(storage::device_metadata "${dev}" 2>/dev/null || true)"
   meta="$(storage::lower "${meta}")"
   case "${meta}" in
-    *instance*storage*|*ec2*nvme*instance*|*local*ssd*|*local-nvme*|*nvme*local*|*ephemeral*)
-      return 0 ;;
+    *instance*storage* | *ec2*nvme*instance* | *local*ssd* | *local-nvme* | *nvme*local* | *ephemeral*)
+      return 0
+      ;;
     *) return 1 ;;
   esac
 }
@@ -368,7 +387,7 @@ storage::device_storage_kind() {
 }
 
 storage::qbittorrent_kind_for_path() {
-  local path dev kind saw_hdd=0 saw_ssd=0 saw_nvme=0 count=0
+  local path dev kind saw_hdd=0 saw_ssd=0 saw_nvme=0 saw_unknown=0 count=0
   path="${1:-/}"
 
   if storage::path_is_ceph "${path}"; then
@@ -385,19 +404,29 @@ storage::qbittorrent_kind_for_path() {
     [[ -n "${dev}" ]] || continue
     kind="$(storage::device_storage_kind "${dev}" 2>/dev/null || true)"
     case "${kind}" in
-      hdd) saw_hdd=1; count=$((count + 1)) ;;
-      nvme) saw_nvme=1; count=$((count + 1)) ;;
-      ssd) saw_ssd=1; count=$((count + 1)) ;;
+      hdd)
+        saw_hdd=1
+        count=$((count + 1))
+        ;;
+      nvme)
+        saw_nvme=1
+        count=$((count + 1))
+        ;;
+      ssd)
+        saw_ssd=1
+        count=$((count + 1))
+        ;;
+      *) saw_unknown=1 ;;
     esac
   done < <(storage::leaf_devices_for_path "${path}" 2>/dev/null || true)
 
-  (( count > 0 )) || return 1
+  ((count > 0 && ! saw_unknown)) || return 1
 
-  if (( saw_hdd && ! saw_ssd && ! saw_nvme )) && storage::path_has_md_raid0 "${path}"; then
+  if ((saw_hdd && ! saw_ssd && ! saw_nvme)) && storage::path_has_md_raid0 "${path}"; then
     printf 'hdd-raid0\n'
-  elif (( saw_hdd )); then
+  elif ((saw_hdd)); then
     printf 'hdd\n'
-  elif (( saw_nvme && ! saw_ssd )); then
+  elif ((saw_nvme && ! saw_ssd)); then
     printf 'nvme\n'
   else
     printf 'ssd\n'
@@ -410,16 +439,31 @@ storage::host_class_for_path() {
   kind="$(storage::qbittorrent_kind_for_path "${path}" 2>/dev/null || true)"
   case "${kind}" in
     nvme) printf 'nvme\n' ;;
-    hdd|hdd-raid0) printf 'hdd\n' ;;
-    ssd|ceph) printf 'sata-ssd\n' ;;
-    *) printf 'sata-ssd\n' ;;
+    hdd | hdd-raid0) printf 'hdd\n' ;;
+    ssd | ceph) printf 'sata-ssd\n' ;;
+    *) printf 'hdd\n' ;;
   esac
+}
+
+storage::readahead_device_for_path() {
+  local path="${1:-/}" dev name
+  storage::path_is_network_or_fuse "${path}" && return 1
+  [[ "$(storage::mount_fstype "${path}" 2>/dev/null || true)" != zfs ]] || return 1
+  dev="$(storage::source_device_for_path "${path}" 2>/dev/null)" || return 1
+  name="$(storage::block_name_from_device "${dev}" 2>/dev/null)" || return 1
+  # Use the filesystem-facing MD/LVM/crypt device, not every physical leaf.
+  # Partitions share their parent disk's read-ahead control.
+  if [[ "$(storage::block_type "${name}" 2>/dev/null || true)" == part ]]; then
+    name="$(storage::parent_block_name "${name}" 2>/dev/null)" || return 1
+  fi
+  case "${name}" in '' | loop* | ram* | zram* | sr* | fd*) return 1 ;; esac
+  printf '%s\n' "${name}"
 }
 
 storage::is_schedulable_block_device() {
   local dev="$1"
   [[ -n "${dev}" ]] || return 1
-  case "${dev}" in loop*|ram*|sr*|fd*|dm-*|md*) return 1 ;; esac
+  case "${dev}" in loop* | ram* | sr* | fd* | dm-* | md*) return 1 ;; esac
   [[ -e "/sys/block/${dev}/queue/scheduler" ]]
 }
 

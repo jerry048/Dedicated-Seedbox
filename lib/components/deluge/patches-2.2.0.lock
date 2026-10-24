@@ -1,0 +1,4 @@
+# Exact LF bytes from Patch/patches/libtorrent/{1.2.20,2.0.15}/patch.
+16f385198cc9fbc39632aa77a2a463f14d2884229675571d689ac4a7a26000a3  libtorrent-1.2.20.patch
+71e0542191c9dbc60d733b2b2fa31b52e4f92a13c083ab806246c6d205f60c9b  libtorrent-2.0.15.patch
+fec5f3aeb039d361d4144a24d143840a968f682336d2a2da50b6edf87bda5720  deluge-2.2.0-crypto.patch

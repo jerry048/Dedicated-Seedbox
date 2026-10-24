@@ -10,22 +10,29 @@ user::exists() {
 }
 
 user::home() {
-  getent passwd "$1" | awk -F: '{print $6}'
+  local home
+  home="$(getent passwd "$1" | awk -F: '{print $6}')" || return $?
+  [[ "${home}" == /* && "${home}" != *[[:cntrl:]]* ]] || return 1
+  printf '%s\n' "${home}"
 }
 
 user::ensure() {
   local user="$1" shell="${2:-/bin/bash}"
-  validate::die_username "${user}"
+  validate::die_username "${user}" || return $?
   if ! user::exists "${user}"; then
-    useradd -m -s "${shell}" "${user}"
+    useradd -m -s "${shell}" "${user}" || return $?
   fi
   local home
-  home="$(user::home "${user}")"
+  home="$(user::home "${user}")" || return $?
   if [[ -z "${home}" || ! -d "${home}" ]]; then
     ui::error "Could not determine home directory for ${user}."
     return 1
   fi
-  chown "${user}:${user}" "${home}" 2>/dev/null || true
+  fs::assert_no_symlink_components "${home}" || return $?
+  [[ "$(stat -c %u -- "${home}")" == "$(id -u "${user}")" ]] || {
+    ui::error "Existing home has the wrong owner: ${home}"
+    return 1
+  }
 }
 
 user::set_password() {
@@ -35,11 +42,13 @@ user::set_password() {
 }
 
 user::run() {
-  local user="$1"; shift
+  local user="$1"
+  shift
   runuser -u "${user}" -- "$@"
 }
 
 user::run_shell() {
-  local user="$1"; shift
+  local user="$1"
+  shift
   runuser -u "${user}" -- bash -lc "$*"
 }

@@ -15,7 +15,7 @@ By default, it:
 3. Finds files matching this layout:
 
    ```text
-   Torrent Clients/qBittorrent/<arch>/qBittorrent-<qb_version> - libtorrent-<libtorrent_version>/qbittorrent-nox
+    Torrent Clients/qBittorrent/ARCH/qBittorrent-QB_VERSION - libtorrent-LIBTORRENT_VERSION/qbittorrent-nox
    ```
 
 4. Downloads each matching artifact.
@@ -115,15 +115,15 @@ The output is a TSV file with this header:
 
 Columns:
 
-| Column | Description |
-| --- | --- |
-| `qb_version` | qBittorrent version parsed from the artifact path. |
-| `libtorrent_version` | libtorrent version parsed from the artifact path. |
-| `arch` | Normalized architecture name. Supported values are `amd64` and `arm64`. |
-| `source` | Always `static` for generated entries. |
-| `url` | Raw artifact URL used by installers and verification. |
-| `sha256` | SHA-256 checksum of the binary artifact. |
-| `config_family` | qBittorrent configuration compatibility family inferred from the qBittorrent version. |
+| Column               | Description                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `qb_version`         | qBittorrent version parsed from the artifact path.                                    |
+| `libtorrent_version` | libtorrent version parsed from the artifact path.                                     |
+| `arch`               | Normalized architecture name. Supported values are `amd64` and `arm64`.               |
+| `source`             | Always `static` for generated entries.                                                |
+| `url`                | Raw artifact URL used by installers and verification.                                 |
+| `sha256`             | SHA-256 checksum of the binary artifact.                                              |
+| `config_family`      | qBittorrent configuration compatibility family inferred from the qBittorrent version. |
 
 A generated manifest also includes comments with the generator version, generation timestamp, source repository, discovery ref, and raw URL ref.
 
@@ -131,61 +131,62 @@ A generated manifest also includes comments with the generator version, generati
 
 The script assigns `config_family` based on the qBittorrent version:
 
-| qBittorrent version | `config_family` |
-| --- | --- |
-| `4.1.x` | `legacy_41` |
-| `4.2.x` or `4.3.x` | `classic_pbkdf2` |
-| Anything else | `modern_pbkdf2` |
+| qBittorrent version | `config_family`  |
+| ------------------- | ---------------- |
+| `4.1.x`             | `legacy_41`      |
+| `4.2.x` or `4.3.x`  | `classic_pbkdf2` |
+| Anything else       | `modern_pbkdf2`  |
 
 ## Architecture handling
 
 Repository folder names are normalized to the manifest architecture names:
 
 | Repository folder | Manifest architecture |
-| --- | --- |
-| `amd64` | `amd64` |
-| `x86_64` | `amd64` |
-| `x64` | `amd64` |
-| `arm64` | `arm64` |
-| `aarch64` | `arm64` |
-| `ARM64` | `arm64` |
+| ----------------- | --------------------- |
+| `amd64`           | `amd64`               |
+| `x86_64`          | `amd64`               |
+| `x64`             | `amd64`               |
+| `arm64`           | `arm64`               |
+| `aarch64`         | `arm64`               |
+| `ARM64`           | `arm64`               |
 
 Unknown architecture folders are ignored.
 
 ## CLI options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--owner` | `jerry048` | GitHub owner to inspect. |
-| `--repo` | `Dedicated-Seedbox` | GitHub repository to inspect. |
-| `--ref` | `main` | Branch, tag, or commit used for discovery. |
-| `--pin-url-ref` / `--no-pin-url-ref` | `--pin-url-ref` | Resolve `--ref` to a commit SHA and use that SHA in raw artifact URLs. |
-| `--artifact-root` | `Torrent Clients/qBittorrent` | Repository path containing qBittorrent architecture folders. |
-| `--output`, `-o` | `manifests/qbittorrent.tsv` relative to the inferred repo root | Manifest path to write, or `-` for stdout. |
-| `--local-repo` | unset | Read artifacts from a local checkout instead of GitHub raw downloads. |
-| `--cache-dir` | `$XDG_CACHE_HOME/seedbox-qbittorrent-manifest` or `~/.cache/seedbox-qbittorrent-manifest` | Cache downloaded artifacts by URL. |
-| `--no-cache` | disabled | Disable the download cache. |
-| `--github-token` | `$GITHUB_TOKEN` | GitHub token for API and artifact requests. |
-| `--arch` | all supported architectures | Include only normalized architectures such as `amd64` or `arm64`. May be comma-separated or repeated. |
-| `--qb-version` | all qBittorrent versions | Include only specific qBittorrent versions. May be comma-separated or repeated. |
-| `--libtorrent-version` | all libtorrent versions | Include only specific libtorrent versions. May be comma-separated or repeated. |
-| `--min-bytes` | `524288` | Minimum artifact size accepted as a real binary. Use `0` only when intentionally disabling this check. |
-| `--dry-run` | disabled | Print the manifest to stdout without writing. |
-| `--verify MANIFEST` | unset | Verify an existing manifest instead of generating a new one. |
-| `--version` | n/a | Print the tool version. |
+| Option                                    | Default                                                                                   | Description                                                                                                                  |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `--owner OWNER`                           | `jerry048`                                                                                | GitHub owner to inspect.                                                                                                     |
+| `--repo REPO`                             | `Dedicated-Seedbox`                                                                       | GitHub repository to inspect.                                                                                                |
+| `--ref REF`                               | `main`                                                                                    | Branch, tag, or commit used for discovery.                                                                                   |
+| `--pin-url-ref`                           | enabled                                                                                   | Resolve `--ref` to a commit SHA and use that SHA in raw artifact URLs.                                                       |
+| `--no-pin-url-ref`                        | disabled                                                                                  | Use the supplied ref in raw artifact URLs without pinning it to a commit.                                                    |
+| `--artifact-root ARTIFACT_ROOT`           | `Torrent Clients/qBittorrent`                                                             | Repository path containing qBittorrent architecture folders.                                                                 |
+| `--output OUTPUT`                         | `manifests/qbittorrent.tsv` relative to the inferred repo root                            | Manifest path to write, or `-` for stdout. Alias: `-o OUTPUT`.                                                               |
+| `--local-repo LOCAL_REPO`                 | unset                                                                                     | Read artifacts from a local checkout instead of GitHub raw downloads.                                                        |
+| `--cache-dir CACHE_DIR`                   | `$XDG_CACHE_HOME/seedbox-qbittorrent-manifest` or `~/.cache/seedbox-qbittorrent-manifest` | Cache downloaded artifacts by URL.                                                                                           |
+| `--no-cache`                              | disabled                                                                                  | Disable the download cache.                                                                                                  |
+| `--github-token GITHUB_TOKEN`             | `$GITHUB_TOKEN`                                                                           | Token sent only to HTTPS `api.github.com` on port 443, never arbitrary artifact URLs. Redirects do not carry authentication. |
+| `--arch ARCH`                             | all supported architectures                                                               | Include only normalized architectures such as `amd64` or `arm64`. May be comma-separated or repeated.                        |
+| `--qb-version QB_VERSION`                 | all qBittorrent versions                                                                  | Include only specific qBittorrent versions. May be comma-separated or repeated.                                              |
+| `--libtorrent-version LIBTORRENT_VERSION` | all libtorrent versions                                                                   | Include only specific libtorrent versions. May be comma-separated or repeated.                                               |
+| `--min-bytes MIN_BYTES`                   | `524288`                                                                                  | Minimum artifact size accepted as a real binary. Use `0` only when intentionally disabling this check.                       |
+| `--dry-run`                               | disabled                                                                                  | Print the manifest to stdout without writing.                                                                                |
+| `--verify MANIFEST`                       | unset                                                                                     | Verify an existing manifest instead of generating a new one.                                                                 |
+| `--version`                               | n/a                                                                                       | Print the tool version.                                                                                                      |
 
 ## Filtering examples
 
-Generate only qBittorrent `5.0.3` entries:
+Generate only qBittorrent `5.3.0` entries:
 
 ```bash
-tools/generate_qbittorrent_manifest.py --qb-version 5.0.3
+tools/generate_qbittorrent_manifest.py --qb-version 5.3.0
 ```
 
-Generate only entries for libtorrent `v2.0.11`:
+Generate only entries for libtorrent `v2.1.2`:
 
 ```bash
-tools/generate_qbittorrent_manifest.py --libtorrent-version v2.0.11
+tools/generate_qbittorrent_manifest.py --libtorrent-version v2.1.2
 ```
 
 Combine filters:
@@ -193,8 +194,8 @@ Combine filters:
 ```bash
 tools/generate_qbittorrent_manifest.py \
   --arch amd64 \
-  --qb-version 5.0.3 \
-  --libtorrent-version v2.0.11
+  --qb-version 5.3.0 \
+  --libtorrent-version v2.1.2
 ```
 
 Repeat options instead of using comma-separated values:
@@ -203,7 +204,7 @@ Repeat options instead of using comma-separated values:
 tools/generate_qbittorrent_manifest.py \
   --arch amd64 \
   --arch arm64 \
-  --qb-version 5.0.3 \
+  --qb-version 5.3.0 \
   --qb-version 5.0.4
 ```
 
@@ -285,6 +286,7 @@ tools/generate_qbittorrent_manifest.py --cache-dir /tmp/qbittorrent-artifact-cac
 ## Security notes
 
 - Keep `sha256` populated for every production manifest entry.
+- GitHub API authentication is host-scoped. Artifact URLs and redirect targets do not receive the token; private artifact hosts need a separately reviewed download workflow.
 - Prefer the default `--pin-url-ref` behavior so raw URLs point at an immutable commit SHA instead of a moving branch.
 - Do not disable `--min-bytes` unless you know the artifact is expected to be smaller than the default threshold.
 - If remote downloads return Git LFS pointer files, use a local checkout with Git LFS installed and run the tool with `--local-repo`.
@@ -332,9 +334,9 @@ Check that:
 
 ## Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Success. |
-| `1` | Manifest generation or verification failed. |
-| `2` | Invalid CLI usage, such as an unsupported architecture filter. |
-| `130` | Interrupted by the user. |
+| Code  | Meaning                                                        |
+| ----- | -------------------------------------------------------------- |
+| `0`   | Success.                                                       |
+| `1`   | Manifest generation or verification failed.                    |
+| `2`   | Invalid CLI usage, such as an unsupported architecture filter. |
+| `130` | Interrupted by the user.                                       |

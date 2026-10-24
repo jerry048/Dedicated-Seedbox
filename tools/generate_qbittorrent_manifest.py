@@ -59,8 +59,7 @@ DEFAULT_ARTIFACT_ROOT = "Torrent Clients/qBittorrent"
 DEFAULT_OUTPUT = "manifests/qbittorrent.tsv"
 USER_AGENT = f"seedbox-qbittorrent-manifest/{TOOL_VERSION}"
 
-# The real upstream repository has historically used x86_64 and ARM64 folder
-# names, while seedboxctl state/manifest architecture names are amd64/arm64.
+# Repository folders use x86_64 and ARM64; state and manifests use amd64/arm64.
 ARCH_ALIASES = {
     "amd64": "amd64",
     "x86_64": "amd64",
@@ -141,7 +140,12 @@ def version_key(version: str) -> tuple:
 
 
 def artifact_sort_key(a: Artifact) -> tuple:
-    return (version_key(a.qb_version), version_key(a.libtorrent_version), a.arch, a.path)
+    return (
+        version_key(a.qb_version),
+        version_key(a.libtorrent_version),
+        a.arch,
+        a.path,
+    )
 
 
 def config_family(qb_version: str) -> str:
@@ -177,15 +181,35 @@ def request_headers(token: str | None = None) -> dict[str, str]:
     return headers
 
 
-def http_request(url: str, token: str | None = None, *, binary: bool = False, retries: int = 3) -> bytes:
-    headers = request_headers(token)
+class ScopedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None:
+            # Never carry credentials across a redirect, even between GitHub hosts.
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+def http_request(
+    url: str, token: str | None = None, *, binary: bool = False, retries: int = 3
+) -> bytes:
+    parsed = urllib.parse.urlsplit(url)
+    trusted = (
+        parsed.scheme == "https"
+        and parsed.hostname == "api.github.com"
+        and parsed.port in (None, 443)
+        and parsed.username is None
+        and parsed.password is None
+    )
+    headers = request_headers(token if trusted else None)
+    opener = urllib.request.build_opener(ScopedRedirectHandler())
     if binary:
         headers["Accept"] = "application/octet-stream"
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
         req = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with opener.open(req, timeout=60) as resp:
                 return resp.read()
         except urllib.error.HTTPError as exc:
             last_error = exc
@@ -193,7 +217,9 @@ def http_request(url: str, token: str | None = None, *, binary: bool = False, re
                 time.sleep(min(2**attempt, 10))
                 continue
             body = exc.read().decode("utf-8", "replace")[:500]
-            raise ManifestError(f"HTTP {exc.code} while fetching {url}: {body}") from exc
+            raise ManifestError(
+                f"HTTP {exc.code} while fetching {url}: {body}"
+            ) from exc
         except urllib.error.URLError as exc:
             last_error = exc
             if attempt < retries:
@@ -302,7 +328,9 @@ def discover_local_artifacts(
     return artifacts
 
 
-def parse_artifact_path(path: str, *, artifact_root: str) -> tuple[str, str, str, str] | None:
+def parse_artifact_path(
+    path: str, *, artifact_root: str
+) -> tuple[str, str, str, str] | None:
     # Keep the default regex fast/simple, but allow callers to override the root.
     if artifact_root != DEFAULT_ARTIFACT_ROOT:
         escaped_root = re.escape(artifact_root.rstrip("/"))
@@ -335,7 +363,9 @@ def cache_path(cache_dir: pathlib.Path, url: str) -> pathlib.Path:
     return cache_dir / digest
 
 
-def fetch_artifact_bytes(url: str, token: str | None, cache_dir: pathlib.Path | None) -> bytes:
+def fetch_artifact_bytes(
+    url: str, token: str | None, cache_dir: pathlib.Path | None
+) -> bytes:
     if cache_dir is not None:
         cache_dir.mkdir(parents=True, exist_ok=True)
         cp = cache_path(cache_dir, url)
@@ -399,7 +429,10 @@ def apply_filters(
             continue
         if qb_versions and artifact.qb_version not in qb_versions:
             continue
-        if libtorrent_versions and artifact.libtorrent_version not in libtorrent_versions:
+        if (
+            libtorrent_versions
+            and artifact.libtorrent_version not in libtorrent_versions
+        ):
             continue
         result.append(artifact)
     return sorted(result, key=artifact_sort_key)
@@ -407,12 +440,16 @@ def apply_filters(
 
 def read_manifest(path: pathlib.Path) -> list[Artifact]:
     artifacts: list[Artifact] = []
-    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for lineno, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip() or line.startswith("#"):
             continue
         fields = line.split("\t")
         if len(fields) < 6:
-            raise ManifestError(f"{path}:{lineno}: expected at least 6 tab-separated fields")
+            raise ManifestError(
+                f"{path}:{lineno}: expected at least 6 tab-separated fields"
+            )
         qb_version, libtorrent_version, arch, source, url, sha256 = fields[:6]
         if source != "static":
             continue
@@ -432,7 +469,12 @@ def read_manifest(path: pathlib.Path) -> list[Artifact]:
     return artifacts
 
 
-def verify_manifest(path: pathlib.Path, token: str | None, cache_dir: pathlib.Path | None, min_bytes: int) -> int:
+def verify_manifest(
+    path: pathlib.Path,
+    token: str | None,
+    cache_dir: pathlib.Path | None,
+    min_bytes: int,
+) -> int:
     artifacts = read_manifest(path)
     if not artifacts:
         eprint(f"No static artifacts found in {path}")
@@ -440,11 +482,15 @@ def verify_manifest(path: pathlib.Path, token: str | None, cache_dir: pathlib.Pa
     failures = 0
     for idx, artifact in enumerate(artifacts, start=1):
         if not artifact.url:
-            eprint(f"[{idx}/{len(artifacts)}] SKIP {artifact.qb_version}/{artifact.libtorrent_version}/{artifact.arch}: no URL")
+            eprint(
+                f"[{idx}/{len(artifacts)}] SKIP {artifact.qb_version}/{artifact.libtorrent_version}/{artifact.arch}: no URL"
+            )
             failures += 1
             continue
         if not re.fullmatch(r"[0-9a-f]{64}", artifact.sha256):
-            eprint(f"[{idx}/{len(artifacts)}] FAIL {artifact.url}: invalid/missing sha256 in manifest")
+            eprint(
+                f"[{idx}/{len(artifacts)}] FAIL {artifact.url}: invalid/missing sha256 in manifest"
+            )
             failures += 1
             continue
         try:
@@ -458,7 +504,9 @@ def verify_manifest(path: pathlib.Path, token: str | None, cache_dir: pathlib.Pa
         if got == artifact.sha256:
             eprint(f"[{idx}/{len(artifacts)}] OK   {artifact.url}")
         else:
-            eprint(f"[{idx}/{len(artifacts)}] FAIL {artifact.url}: expected {artifact.sha256}, got {got}")
+            eprint(
+                f"[{idx}/{len(artifacts)}] FAIL {artifact.url}: expected {artifact.sha256}, got {got}"
+            )
             failures += 1
     return 1 if failures else 0
 
@@ -539,9 +587,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="Generate Dedicated-Seedbox/manifests/qbittorrent.tsv with SHA-256 checksums.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--owner", default=DEFAULT_OWNER, help="GitHub owner to inspect")
-    parser.add_argument("--repo", default=DEFAULT_REPO, help="GitHub repository to inspect")
-    parser.add_argument("--ref", default=DEFAULT_REF, help="branch, tag, or commit to inspect")
+    parser.add_argument(
+        "--owner", default=DEFAULT_OWNER, help="GitHub owner to inspect"
+    )
+    parser.add_argument(
+        "--repo", default=DEFAULT_REPO, help="GitHub repository to inspect"
+    )
+    parser.add_argument(
+        "--ref", default=DEFAULT_REF, help="branch, tag, or commit to inspect"
+    )
     parser.add_argument(
         "--pin-url-ref",
         action=argparse.BooleanOptionalAction,
@@ -568,11 +622,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cache-dir",
         type=pathlib.Path,
-        default=pathlib.Path(os.environ.get("XDG_CACHE_HOME", pathlib.Path.home() / ".cache"))
+        default=pathlib.Path(
+            os.environ.get("XDG_CACHE_HOME", pathlib.Path.home() / ".cache")
+        )
         / "seedbox-qbittorrent-manifest",
         help="cache downloaded artifacts by URL",
     )
-    parser.add_argument("--no-cache", action="store_true", help="disable download cache")
+    parser.add_argument(
+        "--no-cache", action="store_true", help="disable download cache"
+    )
     parser.add_argument(
         "--github-token",
         default=os.environ.get("GITHUB_TOKEN"),
@@ -599,14 +657,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=512 * 1024,
         help="minimum artifact size accepted as a real binary; use 0 to disable",
     )
-    parser.add_argument("--dry-run", action="store_true", help="print manifest to stdout without writing")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print manifest to stdout without writing",
+    )
     parser.add_argument(
         "--verify",
         type=pathlib.Path,
         metavar="MANIFEST",
         help="verify an existing manifest instead of generating a new one",
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {TOOL_VERSION}")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {TOOL_VERSION}"
+    )
     return parser
 
 
@@ -617,12 +681,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         cache_dir = None if args.no_cache else args.cache_dir
         if args.verify:
-            return verify_manifest(args.verify, args.github_token, cache_dir, args.min_bytes)
+            return verify_manifest(
+                args.verify, args.github_token, cache_dir, args.min_bytes
+            )
 
         requested_arches = parse_csv(args.arch)
         invalid_arches = requested_arches - {"amd64", "arm64"}
         if invalid_arches:
-            die(f"unsupported --arch value(s): {', '.join(sorted(invalid_arches))}", code=2)
+            die(
+                f"unsupported --arch value(s): {', '.join(sorted(invalid_arches))}",
+                code=2,
+            )
         qb_versions = parse_csv(args.qb_version)
         libtorrent_versions = parse_csv(args.libtorrent_version)
 
@@ -633,18 +702,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise ManifestError(f"--local-repo does not exist: {local_repo}")
             if args.pin_url_ref:
                 try:
-                    url_ref = resolve_ref(args.owner, args.repo, args.ref, args.github_token)
+                    url_ref = resolve_ref(
+                        args.owner, args.repo, args.ref, args.github_token
+                    )
                 except ManifestError:
                     # Local generation should remain usable offline; fall back to the requested ref.
-                    eprint("warning: could not resolve --ref to a commit SHA; using the provided ref in URLs")
+                    eprint(
+                        "warning: could not resolve --ref to a commit SHA; using the provided ref in URLs"
+                    )
                     url_ref = args.ref
             else:
                 url_ref = args.ref
-            artifacts = discover_local_artifacts(local_repo, args.owner, args.repo, url_ref, args.artifact_root)
+            artifacts = discover_local_artifacts(
+                local_repo, args.owner, args.repo, url_ref, args.artifact_root
+            )
         else:
             local_repo = None
             if args.pin_url_ref:
-                url_ref = resolve_ref(args.owner, args.repo, args.ref, args.github_token)
+                url_ref = resolve_ref(
+                    args.owner, args.repo, args.ref, args.github_token
+                )
             else:
                 url_ref = args.ref
             artifacts = discover_remote_artifacts(
@@ -656,18 +733,28 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.artifact_root,
             )
 
-        artifacts = apply_filters(artifacts, requested_arches, qb_versions, libtorrent_versions)
+        artifacts = apply_filters(
+            artifacts, requested_arches, qb_versions, libtorrent_versions
+        )
         if not artifacts:
-            raise ManifestError("no qBittorrent static artifacts matched the requested filters")
+            raise ManifestError(
+                "no qBittorrent static artifacts matched the requested filters"
+            )
 
         if args.local_repo:
             # Local artifacts already contain checksums.
             for artifact in artifacts:
-                local_file = args.local_repo.resolve() / pathlib.Path(*artifact.path.split("/"))
-                validate_artifact_bytes(artifact, local_file.read_bytes(), min_bytes=args.min_bytes)
+                local_file = args.local_repo.resolve() / pathlib.Path(
+                    *artifact.path.split("/")
+                )
+                validate_artifact_bytes(
+                    artifact, local_file.read_bytes(), min_bytes=args.min_bytes
+                )
             checked = artifacts
         else:
-            checked = checksum_remote_artifacts(artifacts, args.github_token, cache_dir, args.min_bytes)
+            checked = checksum_remote_artifacts(
+                artifacts, args.github_token, cache_dir, args.min_bytes
+            )
 
         write_manifest(
             args.output,

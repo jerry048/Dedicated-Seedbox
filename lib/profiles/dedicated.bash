@@ -9,23 +9,39 @@ profiles::dedicated_usage() {
   if ui::zh; then
     cat <<'USAGE'
 用法：
-  seedboxctl install --profile dedicated --user 用户名 [选项]
+  seedboxctl install --profile dedicated --user USER [OPTIONS]
 
 专用服务器选项：
-  --components qbittorrent[,autobrr,autoremove-torrents,vertex,tuning,bbr]
+  --components COMPONENT[,COMPONENT...]  qbittorrent,deluge,autobrr,autoremove-torrents,vertex,tuning,bbr
+  --deluge-version VERSION
+  --deluge-libtorrent-version VERSION
+  --deluge-web-port PORT
+  --deluge-rpc-port PORT
+  --deluge-incoming-port PORT
+  --deluge-cache-mib N
   --no-tuning
-  --storage-path 路径
+  --storage-path PATH
+  --storage TYPE             auto|hdd|hdd-raid0|ssd|nvme|ceph
+  --interface IFACE
+  --link-speed-mbps N
   --disk-scheduler-all
-  --password-stdin | --password-file 文件 | --password 密码
-  --cache MiB
+  --password-stdin
+  --password-file FILE
+  --password PASSWORD
+  --cache N                  缓存大小，单位 MiB
   --qb-tuning-profile PROFILE
-  --qb-version 版本 --libtorrent-version 版本
-  --source distro|static
-  --web-port 端口 --incoming-port 端口
+  --qb-version VERSION
+  --libtorrent-version VERSION
+  --source SOURCE            distro|static|existing
+  --web-port PORT
+  --incoming-port PORT
   --allow-unverified-downloads
-  --bbr-algo bbrv3|bbrx|bbrw|bbr_brutal|bbrw_brutal
-  --bbr-script-url URL --bbr-script-sha256 SHA --bbr-raw-base URL
-  --bbr-lang LANG --force-runtime
+  --bbr-algo ALGO            bbrv3|bbrx|bbrx_old|bbrw|bbr_brutal|bbrw_brutal
+  --bbr-script-url URL
+  --bbr-script-sha256 SHA256
+  --bbr-raw-base URL
+  --bbr-lang LANG
+  --force-runtime
 
 未指定 --components 时默认安装：
   qbittorrent,tuning
@@ -35,23 +51,39 @@ USAGE
   else
     cat <<'USAGE'
 Usage:
-  seedboxctl install --profile dedicated --user USER [options]
+  seedboxctl install --profile dedicated --user USER [OPTIONS]
 
 Dedicated options:
-  --components qbittorrent[,autobrr,autoremove-torrents,vertex,tuning,bbr]
+  --components COMPONENT[,COMPONENT...]  qbittorrent,deluge,autobrr,autoremove-torrents,vertex,tuning,bbr
+  --deluge-version VERSION
+  --deluge-libtorrent-version VERSION
+  --deluge-web-port PORT
+  --deluge-rpc-port PORT
+  --deluge-incoming-port PORT
+  --deluge-cache-mib N
   --no-tuning
   --storage-path PATH
+  --storage TYPE             auto|hdd|hdd-raid0|ssd|nvme|ceph
+  --interface IFACE
+  --link-speed-mbps N
   --disk-scheduler-all
-  --password-stdin | --password-file FILE | --password PASSWORD
-  --cache MIB
+  --password-stdin
+  --password-file FILE
+  --password PASSWORD
+  --cache N                  Cache size in MiB
   --qb-tuning-profile PROFILE
-  --qb-version VERSION --libtorrent-version VERSION
-  --source distro|static
-  --web-port PORT --incoming-port PORT
+  --qb-version VERSION
+  --libtorrent-version VERSION
+  --source SOURCE            distro|static|existing
+  --web-port PORT
+  --incoming-port PORT
   --allow-unverified-downloads
-  --bbr-algo bbrv3|bbrx|bbrw|bbr_brutal|bbrw_brutal
-  --bbr-script-url URL --bbr-script-sha256 SHA --bbr-raw-base URL
-  --bbr-lang LANG --force-runtime
+  --bbr-algo ALGO            bbrv3|bbrx|bbrx_old|bbrw|bbr_brutal|bbrw_brutal
+  --bbr-script-url URL
+  --bbr-script-sha256 SHA256
+  --bbr-raw-base URL
+  --bbr-lang LANG
+  --force-runtime
 
 Default components when --components is omitted:
   qbittorrent,tuning
@@ -100,25 +132,29 @@ profiles::validate_dedicated_components() {
     item="${item// /}"
     [[ -z "${item}" ]] && continue
     case "${item}" in
-      qbittorrent|autobrr|autoremove-torrents|vertex|tuning|bbr)
+      qbittorrent | deluge | autobrr | autoremove-torrents | vertex | tuning | bbr)
         valid=1
         ;;
       *)
         ui::error "$(ui::tr "未知安装组件：${item}" "Unknown install component: ${item}")"
-        ui::error "$(ui::tr "有效组件：qbittorrent,autobrr,autoremove-torrents,vertex,tuning,bbr" "Valid components: qbittorrent,autobrr,autoremove-torrents,vertex,tuning,bbr")"
+        ui::error "$(ui::tr "有效组件：qbittorrent,deluge,autobrr,autoremove-torrents,vertex,tuning,bbr" "Valid components: qbittorrent,deluge,autobrr,autoremove-torrents,vertex,tuning,bbr")"
         return 2
         ;;
     esac
   done
-  if (( valid == 0 )); then
+  if ((valid == 0)); then
     ui::error "$(ui::tr "没有选择任何组件。" "No install components selected.")"
     return 2
   fi
 }
 
 profiles::dedicated_install() {
-  args::parse "$@"
-  args::has help && { profiles::dedicated_usage; return 0; }
+  args::parse_for install "$@" || return $?
+  args::copy_value_alias bbr_algo algo
+  args::has help && {
+    profiles::dedicated_usage
+    return 0
+  }
   if ((${#POSITIONAL[@]} > 0)); then
     ui::error "$(ui::tr "dedicated install 不接受位置参数：$(args::format_positionals)" "dedicated install does not accept positional arguments: $(args::format_positionals)")"
     ui::error "$(ui::tr "请使用 --components 指定组件。" "Use --components to choose components.")"
@@ -127,13 +163,32 @@ profiles::dedicated_install() {
   log::init install-dedicated
   local components password_cache_created=0
   components="$(args::get components qbittorrent,tuning)"
+  if args::csv_contains "${components}" deluge; then
+    deluge::require_root || return $?
+    deluge::require_platform || return 2
+    deluge::load_install_args || return $?
+    # Reject incompatible client ports before installing either client.
+    if args::csv_contains "${components}" qbittorrent; then
+      local de_port qb_port
+      for de_port in "${DE_WEB_PORT}" "${DE_RPC_PORT}" "${DE_INCOMING_PORT}"; do
+        for qb_port in "$(args::get web_port "$(args::get qb_web_port "$(args::get qb_port 8080)")")" "$(args::get incoming_port "$(args::get qb_incoming_port "$(args::get listen_port 45000)")")"; do
+          [[ "${de_port}" != "${qb_port}" ]] || {
+            ui::error "$(ui::tr 'qBittorrent 与 Deluge 必须使用不同端口；请显式指定 --deluge-incoming-port。' 'qBittorrent and Deluge require different ports; set --deluge-incoming-port explicitly.')"
+            return 2
+          }
+        done
+      done
+    fi
+  fi
   if args::has password_stdin && [[ -z "${SEEDBOX_PASSWORD_STDIN_CACHE:-}" ]]; then
-    SEEDBOX_PASSWORD_STDIN_CACHE="$(mktemp /tmp/seedbox.password.XXXXXX)"
+    SEEDBOX_PASSWORD_STDIN_CACHE="$(mktemp /tmp/seedbox.password.XXXXXX)" || return $?
+    chmod 0600 "${SEEDBOX_PASSWORD_STDIN_CACHE}" || return $?
     export SEEDBOX_PASSWORD_STDIN_CACHE
+    secrets::track_file "${SEEDBOX_PASSWORD_STDIN_CACHE}" || return $?
     password_cache_created=1
   fi
-  if (( password_cache_created )); then
-    trap 'rm -f -- "${SEEDBOX_PASSWORD_STDIN_CACHE:-}"' RETURN
+  if ((password_cache_created)); then
+    trap 'secrets::cleanup_file "${SEEDBOX_PASSWORD_STDIN_CACHE:-}"' RETURN
   fi
 
   if args::has no_tuning; then
@@ -150,6 +205,9 @@ profiles::dedicated_install() {
 
   if args::csv_contains "${components}" qbittorrent; then
     qbittorrent::install_from_parsed || return $?
+  fi
+  if args::csv_contains "${components}" deluge; then
+    deluge::install_from_parsed || return $?
   fi
   if args::csv_contains "${components}" autoremove-torrents; then
     if declare -F autoremove_torrents::install_from_parsed >/dev/null; then

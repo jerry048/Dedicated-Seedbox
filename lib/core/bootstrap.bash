@@ -12,6 +12,7 @@ source "${SEEDBOX_ROOT}/lib/core/detect.bash"
 source "${SEEDBOX_ROOT}/lib/core/fs.bash"
 source "${SEEDBOX_ROOT}/lib/core/state.bash"
 source "${SEEDBOX_ROOT}/lib/core/storage.bash"
+source "${SEEDBOX_ROOT}/lib/core/hardware.bash"
 source "${SEEDBOX_ROOT}/lib/core/download.bash"
 source "${SEEDBOX_ROOT}/lib/core/apt.bash"
 source "${SEEDBOX_ROOT}/lib/core/user.bash"
@@ -33,82 +34,142 @@ done
 unset _seedbox_profile
 
 source "${SEEDBOX_ROOT}/lib/core/status.bash"
+source "${SEEDBOX_ROOT}/lib/core/logs.bash"
 
 seedbox::version() {
-  printf 'seedboxctl V2.0.0\n'
+  printf 'seedboxctl V2.1.0\n'
 }
 
 seedbox::usage() {
   if ui::zh; then
     cat <<'USAGE'
-seedboxctl - Dedicated-Seedbox V2.0.0
+seedboxctl - Dedicated-Seedbox V2.1.0
 
 用法：
-  seedboxctl [--lang en|zh-CN] install --profile dedicated|shared [选项]
-  seedboxctl [--lang en|zh-CN] qbittorrent add-user|install-self|upgrade|uninstall|status|logs [选项]
-  seedboxctl autobrr install|upgrade|uninstall|status [选项]
-  seedboxctl autoremove-torrents install|upgrade|uninstall|status [选项]
-  seedboxctl vertex install|upgrade|uninstall|status [选项]
-  seedboxctl tuning apply|uninstall|status [选项]
-  seedboxctl bbr install|uninstall|status [选项]
-  seedboxctl status [--json]
-  seedboxctl logs qbittorrent --user 用户名
-  seedboxctl doctor [--bundle]
+  seedboxctl install --profile {dedicated|shared} [OPTIONS]
+  seedboxctl qbittorrent {add-user|install-self|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl deluge {install|add-user|upgrade|uninstall|build-runtime|status|logs} [OPTIONS]
+  seedboxctl autobrr {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl autoremove-torrents {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl vertex {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl docker {install|uninstall|status|logs} [OPTIONS]
+  seedboxctl tuning {apply|uninstall|status|logs} [OPTIONS]
+  seedboxctl bbr {install|uninstall|status|logs} [OPTIONS]
+  seedboxctl status [--json] [--check]
+  seedboxctl logs COMPONENT [OPTIONS]
+  seedboxctl logs installer [--run RUN_ID] [--step STEP_ID] [OPTIONS]
   seedboxctl list qbittorrent
   seedboxctl version
 
+大写单词为占位符，[...] 表示可选，{a|b} 表示选一个值。
+所有命令均可在 seedboxctl 后指定 --lang LANG（en|zh-CN）。
+
 示例：
-  seedboxctl --lang zh-CN install --profile dedicated --components qbittorrent \
-    --user jerry048 --password-stdin --cache 3072 \
-    --qb-version 5.0.3 --libtorrent-version v2.0.11 \
-    --web-port 8080 --incoming-port 45000 --source static
+  seedboxctl --lang zh-CN install \
+    --profile dedicated \
+    --components qbittorrent \
+    --user jerry048 \
+    --password-stdin \
+    --cache 3072 \
+    --qb-version 5.3.0 \
+    --libtorrent-version v2.1.2 \
+    --web-port 8080 \
+    --incoming-port 45000 \
+    --source static
 
-  seedboxctl qbittorrent add-user --user alice --password-stdin \
-    --source distro --web-port 8081 --incoming-port 45001
+  seedboxctl --lang zh-CN qbittorrent add-user \
+    --user alice \
+    --password-stdin \
+    --source distro \
+    --web-port 8081 \
+    --incoming-port 45001
 
-  seedboxctl qbittorrent install-self --password-stdin \
-    --source static --qb-version 5.0.3 --libtorrent-version v2.0.11 \
-    --web-port 8080 --incoming-port 45000 --service-mode auto
+  seedboxctl --lang zh-CN qbittorrent install-self \
+    --password-stdin \
+    --source static \
+    --qb-version 5.3.0 \
+    --libtorrent-version v2.1.2 \
+    --web-port 8080 \
+    --incoming-port 45000 \
+    --service-mode auto
 
-  seedboxctl qbittorrent upgrade --user alice --source distro
-  seedboxctl qbittorrent uninstall --user alice
-  seedboxctl doctor --bundle
+  seedboxctl --lang zh-CN qbittorrent upgrade \
+    --user alice \
+    --source distro
+  seedboxctl --lang zh-CN qbittorrent uninstall --user alice
+
+  seedboxctl --lang zh-CN deluge add-user \
+    --user delugeuser \
+    --password-stdin \
+    --deluge-version 2.2.0 \
+    --deluge-libtorrent-version 2.0.15
+
+Deluge 1.3.15/1.1.14 仍为默认，属于已停止维护的旧版；详情见 deluge --help。
 USAGE
   else
     cat <<'USAGE'
-seedboxctl - Dedicated-Seedbox V2.0.0
+seedboxctl - Dedicated-Seedbox V2.1.0
 
 Usage:
-  seedboxctl [--lang en|zh-CN] install --profile dedicated|shared [options]
-  seedboxctl [--lang en|zh-CN] qbittorrent add-user|install-self|upgrade|uninstall|status|logs [options]
-  seedboxctl autobrr install|upgrade|uninstall|status [options]
-  seedboxctl autoremove-torrents install|upgrade|uninstall|status [options]
-  seedboxctl vertex install|upgrade|uninstall|status [options]
-  seedboxctl tuning apply|uninstall|status [options]
-  seedboxctl bbr install|uninstall|status [options]
-  seedboxctl status [--json]
-  seedboxctl logs qbittorrent --user USER
-  seedboxctl doctor [--bundle]
+  seedboxctl install --profile {dedicated|shared} [OPTIONS]
+  seedboxctl qbittorrent {add-user|install-self|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl deluge {install|add-user|upgrade|uninstall|build-runtime|status|logs} [OPTIONS]
+  seedboxctl autobrr {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl autoremove-torrents {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl vertex {install|upgrade|uninstall|status|logs} [OPTIONS]
+  seedboxctl docker {install|uninstall|status|logs} [OPTIONS]
+  seedboxctl tuning {apply|uninstall|status|logs} [OPTIONS]
+  seedboxctl bbr {install|uninstall|status|logs} [OPTIONS]
+  seedboxctl status [--json] [--check]
+  seedboxctl logs COMPONENT [OPTIONS]
+  seedboxctl logs installer [--run RUN_ID] [--step STEP_ID] [OPTIONS]
   seedboxctl list qbittorrent
-  seedboxctl bbr install --bbr-algo bbrx
   seedboxctl version
 
+Uppercase words are metavariables, [...] is optional, {a|b} means choose one.
+Every command accepts --lang LANG (en|zh-CN) immediately after seedboxctl.
+
 Examples:
-  seedboxctl install --profile dedicated --components qbittorrent \
-    --user jerry048 --password-stdin --cache 3072 \
-    --qb-version 5.0.3 --libtorrent-version v2.0.11 \
-    --web-port 8080 --incoming-port 45000 --source static
+  seedboxctl install \
+    --profile dedicated \
+    --components qbittorrent \
+    --user jerry048 \
+    --password-stdin \
+    --cache 3072 \
+    --qb-version 5.3.0 \
+    --libtorrent-version v2.1.2 \
+    --web-port 8080 \
+    --incoming-port 45000 \
+    --source static
 
-  seedboxctl qbittorrent add-user --user alice --password-stdin \
-    --source distro --web-port 8081 --incoming-port 45001
+  seedboxctl qbittorrent add-user \
+    --user alice \
+    --password-stdin \
+    --source distro \
+    --web-port 8081 \
+    --incoming-port 45001
 
-  seedboxctl qbittorrent install-self --password-stdin \
-    --source static --qb-version 5.0.3 --libtorrent-version v2.0.11 \
-    --web-port 8080 --incoming-port 45000 --service-mode auto
+  seedboxctl qbittorrent install-self \
+    --password-stdin \
+    --source static \
+    --qb-version 5.3.0 \
+    --libtorrent-version v2.1.2 \
+    --web-port 8080 \
+    --incoming-port 45000 \
+    --service-mode auto
 
-  seedboxctl qbittorrent upgrade --user alice --source distro
+  seedboxctl qbittorrent upgrade \
+    --user alice \
+    --source distro
   seedboxctl qbittorrent uninstall --user alice
-  seedboxctl doctor --bundle
+
+  seedboxctl deluge add-user \
+    --user delugeuser \
+    --password-stdin \
+    --deluge-version 2.2.0 \
+    --deluge-libtorrent-version 2.0.15
+
+Deluge 1.3.15/1.1.14 remains the unsupported legacy default; see deluge --help.
 USAGE
   fi
 }
@@ -121,7 +182,7 @@ seedbox::install_unexpected_args() {
   ui::error "$(ui::tr "install 不接受位置参数：${unexpected}" "install does not accept positional arguments: ${unexpected}")"
 
   case "${first}" in
-    qb|qbittorrent)
+    qb | qbittorrent)
       ui::error "$(ui::tr "安装 qBittorrent 请使用：" "To install qBittorrent, use:")"
       ui::error "  seedboxctl qbittorrent add-user --user USER --password-stdin"
       ui::error "  seedboxctl install --profile dedicated --components qbittorrent --user USER --password-stdin"
@@ -131,7 +192,7 @@ seedbox::install_unexpected_args() {
       ui::error "  seedboxctl vertex install --user WEBUI_USER --password-stdin"
       ui::error "  seedboxctl install --profile dedicated --components vertex --user WEBUI_USER --password-stdin"
       ;;
-    autobrr|autoremove-torrents|autoremove_torrents|tuning|bbr|docker)
+    autobrr | autoremove-torrents | autoremove_torrents | tuning | bbr | docker)
       component_name="${first//_/-}"
       ui::error "$(ui::tr "安装组件请使用组件子命令或 --components：" "To install a component, use the component subcommand or --components:")"
       ui::error "  seedboxctl ${component_name} install"
@@ -147,8 +208,11 @@ seedbox::install_unexpected_args() {
 }
 
 seedbox::install() {
-  args::parse "$@"
-  args::has help && { seedbox::usage; return 0; }
+  args::parse_for install "$@" || return $?
+  args::has help && {
+    seedbox::usage
+    return 0
+  }
   if ((${#POSITIONAL[@]} > 0)); then
     seedbox::install_unexpected_args
     return $?
@@ -166,15 +230,23 @@ seedbox::install() {
   case "${profile}" in
     dedicated) profiles::dedicated_install "$@" ;;
     shared) profiles::shared_install "$@" ;;
-    *) ui::error "$(ui::tr "未知 profile：${profile}" "Unknown profile: ${profile}")"; return 2 ;;
+    *)
+      ui::error "$(ui::tr "未知 profile：${profile}" "Unknown profile: ${profile}")"
+      return 2
+      ;;
   esac
 }
 
 seedbox::list() {
   local what="${1:-}"
+  [[ $# -gt 0 ]] && shift || true
+  args::parse_for none "$@" || return $?
   case "${what}" in
-    qbittorrent|qb) qbittorrent::list_available ;;
-    *) ui::error "$(ui::tr "未知列表目标：${what:-missing}" "Unknown list target: ${what:-missing}")"; return 2 ;;
+    qbittorrent | qb) qbittorrent::list_available ;;
+    *)
+      ui::error "$(ui::tr "未知列表目标：${what:-missing}" "Unknown list target: ${what:-missing}")"
+      return 2
+      ;;
   esac
 }
 
@@ -211,25 +283,59 @@ seedbox::bootstrap() {
   [[ $# -gt 0 ]] && shift || true
   case "${cmd}" in
     install) seedbox::install "$@" ;;
-    qbittorrent|qb) qbittorrent::cli "$@" ;;
+    qbittorrent | qb) qbittorrent::cli "$@" ;;
+    deluge) deluge::cli "$@" ;;
     autobrr)
-      if declare -F autobrr::cli >/dev/null; then autobrr::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 autobrr 组件。" "autobrr component is not installed in this runtime.")"; return 2; fi ;;
-    autoremove-torrents|autoremove_torrents)
-      if declare -F autoremove_torrents::cli >/dev/null; then autoremove_torrents::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 autoremove-torrents 组件。" "autoremove-torrents component is not installed in this runtime.")"; return 2; fi ;;
+      if declare -F autobrr::cli >/dev/null; then autobrr::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 autobrr 组件。" "autobrr component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
+    autoremove-torrents | autoremove_torrents)
+      if declare -F autoremove_torrents::cli >/dev/null; then autoremove_torrents::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 autoremove-torrents 组件。" "autoremove-torrents component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
     vertex)
-      if declare -F vertex::cli >/dev/null; then vertex::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 Vertex 组件。" "vertex component is not installed in this runtime.")"; return 2; fi ;;
+      if declare -F vertex::cli >/dev/null; then vertex::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 Vertex 组件。" "vertex component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
     docker)
-      if declare -F docker::cli >/dev/null; then docker::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 Docker 组件。" "docker component is not installed in this runtime.")"; return 2; fi ;;
+      if declare -F docker::cli >/dev/null; then docker::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 Docker 组件。" "docker component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
     tuning)
-      if declare -F tuning::cli >/dev/null; then tuning::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 tuning 组件。" "tuning component is not installed in this runtime.")"; return 2; fi ;;
+      if declare -F tuning::cli >/dev/null; then tuning::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 tuning 组件。" "tuning component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
     bbr)
-      if declare -F bbr::cli >/dev/null; then bbr::cli "$@"; else ui::error "$(ui::tr "当前运行环境中没有 BBR 组件。" "bbr component is not installed in this runtime.")"; return 2; fi ;;
-    status) log::init status; status::all "$@" ;;
+      if declare -F bbr::cli >/dev/null; then bbr::cli "$@"; else
+        ui::error "$(ui::tr "当前运行环境中没有 BBR 组件。" "bbr component is not installed in this runtime.")"
+        return 2
+      fi
+      ;;
+    status) status::all "$@" ;;
     logs) status::logs "$@" ;;
-    doctor) doctor::run "$@" ;;
     list) seedbox::list "$@" ;;
-    version|--version|-V) seedbox::version ;;
-    help|--help|-h) seedbox::usage ;;
-    *) ui::error "$(ui::tr "未知命令：${cmd}" "Unknown command: ${cmd}")"; seedbox::usage; return 2 ;;
+    version | --version | -V)
+      args::parse_for none "$@" || return $?
+      seedbox::version
+      ;;
+    help | --help | -h)
+      args::parse_for none "$@" || return $?
+      seedbox::usage
+      ;;
+    *)
+      ui::error "$(ui::tr "未知命令：${cmd}" "Unknown command: ${cmd}")"
+      seedbox::usage
+      return 2
+      ;;
   esac
 }

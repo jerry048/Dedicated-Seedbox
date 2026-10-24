@@ -65,11 +65,11 @@ detect::load_arch() {
   local machine
   machine="$(uname -m)"
   case "${machine}" in
-    x86_64|amd64)
+    x86_64 | amd64)
       SEEDBOX_ARCH="amd64"
       SEEDBOX_REPO_ARCH="x86_64"
       ;;
-    aarch64|arm64)
+    aarch64 | arm64)
       SEEDBOX_ARCH="arm64"
       SEEDBOX_REPO_ARCH="ARM64"
       ;;
@@ -83,7 +83,7 @@ detect::load_arch() {
 detect::assert_supported_arch() {
   detect::load_arch
   case "${SEEDBOX_ARCH}" in
-    amd64|arm64) return 0 ;;
+    amd64 | arm64) return 0 ;;
     *)
       ui::error "Unsupported CPU architecture: ${SEEDBOX_ARCH}"
       ui::error "Supported architectures: amd64/x86_64 and arm64/aarch64."
@@ -117,14 +117,4 @@ detect::default_iface() {
   if command -v ip >/dev/null 2>&1; then
     ip route show default 2>/dev/null | awk 'NR==1 {for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}'
   fi
-}
-
-detect::public_summary() {
-  detect::load_os
-  detect::load_arch
-  printf 'OS: %s %s (%s)\n' "${SEEDBOX_OS_NAME}" "${SEEDBOX_OS_VERSION_ID}" "${SEEDBOX_OS_CODENAME:-unknown-codename}"
-  printf 'Arch: %s\n' "${SEEDBOX_ARCH}"
-  printf 'Systemd: %s\n' "$(detect::has_systemd && printf yes || printf no)"
-  printf 'Virtualization: %s\n' "$(detect::virtualization || true)"
-  printf 'Default interface: %s\n' "$(detect::default_iface || true)"
 }

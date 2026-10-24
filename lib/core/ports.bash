@@ -29,7 +29,10 @@ ports::owner() {
 
 ports::assert_free() {
   local port="$1" label="${2:-$(ui::tr "端口" "port")}"
-  validate::port "${port}" || { ui::error "$(ui::tr "无效的 ${label}：${port}" "Invalid ${label}: ${port}")"; return 1; }
+  validate::port "${port}" || {
+    ui::error "$(ui::tr "无效的 ${label}：${port}" "Invalid ${label}: ${port}")"
+    return 1
+  }
   if ports::is_listening "${port}"; then
     ui::error "$(ui::tr "${label} ${port} 已被占用。" "${label} ${port} is already in use.")"
     local owner
@@ -41,7 +44,7 @@ ports::assert_free() {
 
 ports::wait_for_listen() {
   local port="$1" timeout="${2:-30}" waited=0
-  while (( waited < timeout )); do
+  while ((waited < timeout)); do
     if ports::is_listening "${port}"; then
       return 0
     fi

@@ -16,8 +16,9 @@ state::default_dir() {
 : "${SEEDBOX_STATE_DIR:=$(state::default_dir)}"
 
 state::init() {
-  mkdir -p "${SEEDBOX_STATE_DIR}"
-  chmod 700 "${SEEDBOX_STATE_DIR}" 2>/dev/null || true
+  fs::assert_no_symlink_components "${SEEDBOX_STATE_DIR}" || return $?
+  mkdir -p "${SEEDBOX_STATE_DIR}" || return $?
+  chmod 700 "${SEEDBOX_STATE_DIR}" || return $?
 }
 
 state::safe_id() {
@@ -28,13 +29,13 @@ state::safe_id() {
 
 state::path() {
   local component="$1" id="$2"
-  state::init
+  state::init || return $?
   printf '%s/%s.%s.env\n' "${SEEDBOX_STATE_DIR}" "$(state::safe_id "${component}")" "$(state::safe_id "${id}")"
 }
 
 state::write() {
   local component="$1" id="$2" path
-  path="$(state::path "${component}" "${id}")"
+  path="$(state::path "${component}" "${id}")" || return $?
   if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
     fs::write_file "${path}" 0600 root root
   else
@@ -44,12 +45,12 @@ state::write() {
 
 state::remove() {
   local component="$1" id="$2" path
-  path="$(state::path "${component}" "${id}")"
+  path="$(state::path "${component}" "${id}")" || return $?
   rm -f -- "${path}"
 }
 
 state::list_paths() {
-  state::init
+  state::init || return $?
   find "${SEEDBOX_STATE_DIR}" -maxdepth 1 -type f -name '*.env' -print 2>/dev/null | sort
 }
 

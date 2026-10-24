@@ -9,22 +9,29 @@ readonly SEEDBOX_CORE_DOWNLOAD_SOURCED=1
 
 download::fetch() {
   local url="$1" dest="$2" sha256="${3:-}"
-  local tmp dir
-  dir="$(dirname -- "${dest}")"
-  mkdir -p -- "${dir}"
-  tmp="$(mktemp "${dir}/.download.XXXXXX")"
+  local tmp dir transport_rc=0
+  [[ -z "${sha256}" || "${sha256}" == SKIP || "${sha256}" =~ ^[[:xdigit:]]{64}$ ]] || {
+    ui::error "Invalid SHA-256."
+    return 2
+  }
+  fs::assert_no_symlink_components "${dest}" || return $?
+  dir="$(dirname -- "${dest}")" || return $?
+  mkdir -p -- "${dir}" || return $?
+  tmp="$(mktemp "${dir}/.download.XXXXXX")" || return $?
 
   if command -v curl >/dev/null 2>&1; then
-    if ! curl -fL --retry 3 --connect-timeout 15 --max-time 300 -o "${tmp}" "${url}"; then
+    curl -fL --retry 3 --connect-timeout 15 --max-time 300 -o "${tmp}" "${url}" || transport_rc=$?
+    if ((transport_rc != 0)); then
       rm -f -- "${tmp}"
       ui::error "Download failed: ${url}"
-      return 1
+      case "${transport_rc}" in 5 | 6 | 7 | 18 | 22 | 28 | 35 | 52 | 55 | 56 | 60) return 75 ;; *) return 1 ;; esac
     fi
   elif command -v wget >/dev/null 2>&1; then
-    if ! wget -O "${tmp}" "${url}"; then
+    wget -O "${tmp}" "${url}" || transport_rc=$?
+    if ((transport_rc != 0)); then
       rm -f -- "${tmp}"
       ui::error "Download failed: ${url}"
-      return 1
+      case "${transport_rc}" in 4 | 5 | 7 | 8) return 75 ;; *) return 1 ;; esac
     fi
   else
     rm -f -- "${tmp}"
@@ -47,5 +54,8 @@ download::fetch() {
     ui::warn "Unverified download allowed: ${url}"
   fi
 
-  mv -f -- "${tmp}" "${dest}"
+  local rc=0
+  mv -Tf -- "${tmp}" "${dest}" || rc=$?
+  if ((rc != 0)); then rm -f -- "${tmp}"; fi
+  return "${rc}"
 }
