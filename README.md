@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.1
+# Dedicated-Seedbox V2.1.2
 
 [简体中文](README.zh-CN.md) · [Advanced reference](docs/reference.md)
 
@@ -50,6 +50,8 @@ Available qBittorrent/libtorrent pairs:
 | `5.3.0`                                     | `1.2.20`, `2.1.2`  |
 
 BBR variants (`--bbr-algo`): `bbrv3`, `bbrx`, `bbrx_old`, `bbrw`, `bbr_brutal`, `bbrw_brutal`.
+
+Add `--bbr-algo bbrx` to the dedicated-server command to include BBR. All variants use the SHA-256-verified bundled installer by default. DKMS variants support Debian 11–13 and Ubuntu 20.04/22.04/24.04/26.04 with kernel 5.4–7.1.x and matching headers. No BBRv3 package is configured for Ubuntu 20.04; availability elsewhere varies by OS/architecture. Custom installers require `--bbr-script-sha256` or explicit `--allow-unverified-bbr-installer`.
 
 ### Shared/rootless account
 

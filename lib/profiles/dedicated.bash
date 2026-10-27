@@ -199,6 +199,11 @@ profiles::dedicated_install() {
   fi
   profiles::validate_dedicated_components "${components}" || return $?
 
+  # Reject BBR platform/trust errors before installing other components.
+  if args::csv_contains "${components}" bbr; then
+    (bbr::load_args && bbr::preflight) || return $?
+  fi
+
   ui::heading "$(ui::tr "专用 seedbox 安装" "Dedicated seedbox install")"
   ui::kv "$(ui::tr "组件" "Components")" "${components}"
   ui::log_location

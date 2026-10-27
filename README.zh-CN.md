@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.1
+# Dedicated-Seedbox V2.1.2
 
 [English](README.md) · [详细参考](docs/reference.zh-CN.md)
 
@@ -52,6 +52,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 | `5.3.0`                                     | `1.2.20`、`2.1.2`  |
 
 BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_brutal`、`bbrw_brutal`。
+
+在独享服务器命令中加入 `--bbr-algo bbrx` 即可同时安装 BBR。所有变体默认使用经 SHA-256 校验的随附安装器。DKMS 变体支持 Debian 11–13 和 Ubuntu 20.04/22.04/24.04/26.04，需内核 5.4–7.1.x 及匹配的头文件。未配置 Ubuntu 20.04 的 BBRv3 软件包；其他系统的可用性取决于系统和架构。自定义安装器需提供 `--bbr-script-sha256`，或明确指定 `--allow-unverified-bbr-installer`。
 
 ### 共享/rootless 账号
 

@@ -402,15 +402,35 @@ status::kernel_value() {
 
 status::bbr() {
   STATUS_ROW[kind]=configuration
-  local algorithm="${STATUS_STATE[algo]:-}" active available
+  local algorithm="${STATUS_STATE[algo]:-}" active available target
   if [[ "${STATUS_STATE[status]:-}" == generic-kernel-installed ]]; then
     status::result inactive pending-reboot false 'Kernel fallback recorded; reboot into it and rerun module installation as appropriate'
     return 0
   fi
-  case "${algorithm}" in bbrv3) algorithm=bbr ;; bbrx | bbrx_old | bbrw | bbr_brutal | bbrw_brutal) ;; *)
-    status::result unknown unknown false 'Invalid recorded BBR algorithm'
-    return 0
-    ;;
+  case "${algorithm}" in
+    bbrv3)
+      target="${STATUS_STATE[kernel_release]:-}"
+      if [[ ! "${target}" =~ ^[A-Za-z0-9][A-Za-z0-9.+_~-]*$ || ${#target} -gt 255 ]]; then
+        status::result unknown unknown false 'BBRv3 target kernel is not recorded or is invalid; reinstall with a kernel-reporting installer'
+        return 0
+      fi
+      STATUS_ROW[recorded_version]="${target}"
+      status::query uname -r
+      if ((STATUS_RC != 0)) || [[ ! "${STATUS_OUTPUT}" =~ ^[A-Za-z0-9][A-Za-z0-9.+_~-]*$ ]]; then
+        status::result unknown unknown false 'Running kernel release could not be verified'
+        return 0
+      fi
+      if [[ "${STATUS_OUTPUT}" != "${target}" ]]; then
+        status::result inactive pending-reboot false "Boot the recorded BBRv3 kernel ${target}; running kernel is ${STATUS_OUTPUT}"
+        return 0
+      fi
+      algorithm=bbr
+      ;;
+    bbrx | bbrx_old | bbrw | bbr_brutal | bbrw_brutal) ;;
+    *)
+      status::result unknown unknown false 'Invalid recorded BBR algorithm'
+      return 0
+      ;;
   esac
   status::kernel_value /proc/sys/net/ipv4/tcp_congestion_control || {
     status::result unknown unknown false 'Current congestion control cannot be read'

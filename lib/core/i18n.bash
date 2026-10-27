@@ -60,7 +60,10 @@ bash is required	缺少 bash，无法运行安装器。
 sha256sum is required	缺少 sha256sum，无法校验安装文件。
 Invalid explicitly supplied BBR installer SHA-256.	提供的 BBR 安装器 SHA-256 校验值格式不正确，请核对后重试。
 Unpublished bbrx_old requires an explicit local or published --bbr-raw-base.	bbrx_old 尚未发布，请用 --bbr-raw-base 指定包含该版本的已审核本地目录或远程地址。
-The bundled bbrx_old installer requires Ubuntu 22.04+ (or supported Debian).	随附的 bbrx_old 安装器需要 Ubuntu 22.04 及以上版本，或受支持的 Debian 系统。
+The bundled BBR installer supports Debian 11/12/13 and Ubuntu 20.04/22.04/24.04/26.04 only.	随附的 BBR 安装器仅支持 Debian 11/12/13 和 Ubuntu 20.04/22.04/24.04/26.04。
+No bundled BBRv3 kernel package is configured for Ubuntu 20.04; choose a DKMS variant.	随附安装器未配置 Ubuntu 20.04 的 BBRv3 内核软件包；请选择 DKMS 变体。
+BBRv3 target kernel was not reported or could not be verified; status will remain unverified.	未收到或无法验证 BBRv3 目标内核信息；状态检查将保持未验证。
+Could not restore the previous congestion-control selection.	无法恢复之前选择的拥塞控制算法。
 Use --bbr-script-sha256 or explicitly --allow-unverified-bbr-installer.	请提供 --bbr-script-sha256 校验值；只有审核过安装器且愿意承担风险时，才使用 --allow-unverified-bbr-installer。
 BBR installer URL uses a moving main branch. Pin --bbr-script-url and --bbr-raw-base to a commit for production.	BBR 安装器地址指向会持续变化的 main 分支。生产环境请将 --bbr-script-url 和 --bbr-raw-base 固定到已审核的提交。
 Selected installer does not support bbrx_old.	所选安装器不支持 bbrx_old，请换用包含该变体的安装器。

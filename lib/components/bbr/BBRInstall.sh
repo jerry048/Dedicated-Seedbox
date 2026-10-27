@@ -20,7 +20,7 @@ FORCE_UNSUPPORTED_RUNTIME="${BBR_FORCE_UNSUPPORTED_RUNTIME:-0}"
 WORK_DIR="${BBR_WORK_DIR:-}"
 CLEAN_WORK_DIR="${BBR_CLEAN_WORK_DIR:-auto}"
 ALGO="${BBR_ALGO:-}"
-KERNEL_MIN_VERSION="${BBR_KERNEL_MIN_VERSION:-5.10}"
+KERNEL_MIN_VERSION="${BBR_KERNEL_MIN_VERSION:-5.4}"
 KERNEL_MAX_VERSION="${BBR_KERNEL_MAX_VERSION:-7.1.999}"
 LANG_CODE="${BBR_LANG:-en}"
 SHOW_HELP=0
@@ -127,7 +127,7 @@ Error: required command not found: %s	错误：缺少必需的命令：%s
 Updating APT package indexes...	正在更新 APT 软件包索引……
 Error: could not identify the OS distribution. This script supports Debian/Ubuntu only.	错误：无法识别系统发行版，本安装器仅支持 Debian 和 Ubuntu。
 Error: this script supports Debian 11/12/13 only. Current version: %s	错误：本安装器仅支持 Debian 11、12、13；当前版本为 %s。
-Error: this script supports Ubuntu 22.04/24.04/26.04 only. Current version: %s	错误：本安装器仅支持 Ubuntu 22.04、24.04、26.04；当前版本为 %s。
+Error: this script supports Ubuntu 20.04/22.04/24.04/26.04 only. Current version: %s	错误：本安装器仅支持 Ubuntu 20.04、22.04、24.04、26.04；当前版本为 %s。
 Error: this script supports Debian/Ubuntu only. Current system: %s (%s)	错误：本安装器仅支持 Debian 和 Ubuntu；当前系统为 %s（%s）。
 Warning: --force-runtime was used; skipping runtime safety checks.	注意：已使用 --force-runtime，将跳过运行环境限制检查，请确认已了解内核共享风险。
 Error: container environment detected (%s). Installing kernel/DKMS modules requires the host or a full VM.	错误：检测到容器环境（%s）。内核及 DKMS 模块必须在宿主机或完整虚拟机中安装。
@@ -160,6 +160,10 @@ Selected bbrv3 package directory: bbrv3/%s	已选择 bbrv3 软件包目录：bbr
 Error: could not identify linux-headers/linux-image packages from SHA256SUMS.	错误：无法从 SHA256SUMS 中确定 linux-headers 和 linux-image 软件包。
 Error: could not create the checksum file list.	错误：无法生成待校验文件列表。
 Error: SHA256 verification failed.	错误：SHA-256 校验失败；请勿安装或运行下载文件。
+Invalid BBRv3 kernel package name	BBRv3 内核软件包名称无效。
+Invalid BBRv3 kernel release	BBRv3 内核版本标识无效。
+Unsafe BBR kernel result directory	BBR 内核结果目录不安全。
+BBRv3 kernel result could not be verified	无法验证 BBRv3 内核结果。
 bbrv3 kernel packages downloaded and verified.	bbrv3 内核软件包已下载并通过校验。
 Installing bbrv3 kernel packages...	正在安装 bbrv3 内核软件包……
 bbrv3 kernel packages were installed successfully. Reboot to enter the bbrv3 kernel.	bbrv3 内核软件包已安装。请确认引导配置正常后重启，并进入新内核。
@@ -502,8 +506,8 @@ check_supported_os() {
       ;;
     ubuntu)
       case "$OS_VERSION_ID" in
-        22.04* | 24.04* | 26.04*) ;;
-        *) die "$(l10n "錯誤：本腳本僅支援 Ubuntu 22.04/24.04/26.04。目前版本：${OS_VERSION_ID:-unknown}" "Error: this script supports Ubuntu 22.04/24.04/26.04 only. Current version: ${OS_VERSION_ID:-unknown}")" ;;
+        20.04* | 22.04* | 24.04* | 26.04*) ;;
+        *) die "$(l10n "錯誤：本腳本僅支援 Ubuntu 20.04/22.04/24.04/26.04。目前版本：${OS_VERSION_ID:-unknown}" "Error: this script supports Ubuntu 20.04/22.04/24.04/26.04 only. Current version: ${OS_VERSION_ID:-unknown}")" ;;
       esac
       ;;
     *)
@@ -760,7 +764,7 @@ write_selected_sha256sums() {
 }
 
 install_bbrv3_deb() {
-  local pkg_dir pkg_base selected_pkg_dir work headers_deb image_deb sha_selected
+  local pkg_dir pkg_base selected_pkg_dir work headers_deb image_deb sha_selected kernel_release
   local -a pkg_candidates=()
 
   ensure_download_tools
@@ -805,6 +809,12 @@ install_bbrv3_deb() {
   sha256sum -c "$sha_selected" >/dev/null || die "$(l10n "錯誤：SHA256 校驗失敗。" "Error: SHA256 verification failed.")"
   note "$(l10n "bbrv3 核心套件已下載並完成校驗。" "bbrv3 kernel packages downloaded and verified.")"
 
+  kernel_release="$(dpkg-deb --field "$image_deb" Package)" || return $?
+  [[ "$kernel_release" == linux-image-* ]] || die "Invalid BBRv3 kernel package name"
+  kernel_release="${kernel_release#linux-image-}"
+  kernel_release="${kernel_release#unsigned-}"
+  [[ "$kernel_release" =~ ^[A-Za-z0-9][A-Za-z0-9.+_~-]*$ && ${#kernel_release} -le 255 ]] || die "Invalid BBRv3 kernel release"
+
   separator
   info "$(l10n "正在安裝 bbrv3 核心套件..." "Installing bbrv3 kernel packages...")"
   apt-get install -y "./$image_deb" "./$headers_deb"
@@ -816,6 +826,18 @@ install_bbrv3_deb() {
   remove_managed_module_autoload
   # BBRv3 kernel packages expose the congestion control as bbr.
   configure_sysctl_cc "bbr"
+
+  if [[ -n "${BBR_KERNEL_RESULT_FILE:-}" ]]; then
+    local result_parent result_tmp
+    result_parent="$(dirname -- "$BBR_KERNEL_RESULT_FILE")" || return $?
+    work_path_safe "$result_parent" && [[ -d "$result_parent" && "$(stat -c '%u:%a' -- "$result_parent")" == 0:700 ]] || die "Unsafe BBR kernel result directory"
+    [[ -f "/boot/vmlinuz-$kernel_release" && ! -L "$BBR_KERNEL_RESULT_FILE" ]] || die "BBRv3 kernel result could not be verified"
+    result_tmp="$(mktemp "$result_parent/.bbr-kernel.XXXXXX")" || return $?
+    if ! printf '%s\n' "$kernel_release" >"$result_tmp" || ! mv -Tf -- "$result_tmp" "$BBR_KERNEL_RESULT_FILE"; then
+      rm -f -- "$result_tmp"
+      return 1
+    fi
+  fi
 
   separator
   info "$(l10n "bbrv3 核心套件已成功安裝。請重新開機以進入 bbrv3 核心。" "bbrv3 kernel packages were installed successfully. Reboot to enter the bbrv3 kernel.")"

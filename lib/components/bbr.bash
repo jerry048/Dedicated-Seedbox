@@ -3,14 +3,15 @@ if [[ -n "${SEEDBOX_COMPONENT_BBR_SOURCED:-}" ]]; then
 fi
 readonly SEEDBOX_COMPONENT_BBR_SOURCED=1
 
-: "${SEEDBOX_BBR_INSTALLER_URL:=https://raw.githubusercontent.com/jerry048/Trove/refs/heads/main/BBR-Install/BBRInstall.sh}"
+readonly SEEDBOX_BBR_DEFAULT_INSTALLER_URL='https://raw.githubusercontent.com/jerry048/Trove/refs/heads/main/BBR-Install/BBRInstall.sh'
+: "${SEEDBOX_BBR_INSTALLER_URL:=${SEEDBOX_BBR_DEFAULT_INSTALLER_URL}}"
 : "${SEEDBOX_BBR_RAW_BASE:=https://raw.githubusercontent.com/jerry048/Trove/refs/heads/main/BBR-Install/BBR}"
 : "${SEEDBOX_BBR_SYSCTL_DROPIN:=/etc/sysctl.d/90-seedbox-bbr.conf}"
 : "${SEEDBOX_BBR_MODULES_LOAD_DROPIN:=/etc/modules-load.d/90-seedbox-bbr.conf}"
 : "${SEEDBOX_BBR_LOCAL_INSTALLER:=${SEEDBOX_ROOT}/lib/components/bbr/BBRInstall.sh}"
 : "${SEEDBOX_BBR_AUTO_GENERIC_KERNEL:=1}"
 # SHA-256 of this release's bundled installer (not of remote raw-base payloads).
-readonly SEEDBOX_BBR_BUNDLED_SHA256='24290c75c4baa5c34d40f443fc018284cf3127c3c23cec8b7ed0ce9f278bcf47'
+readonly SEEDBOX_BBR_BUNDLED_SHA256='a68bdfbaf4ac46fe82f3b4b2f66df514627c16a8dd7e7c811009771068c2dcfd'
 declare -g BBR_WORK_ID=""
 declare -g BBR_USE_BUNDLED=0
 
@@ -22,9 +23,11 @@ declare -g BBR_LANG=""
 declare -g BBR_WORK_DIR=""
 declare -g BBR_SCRIPT=""
 declare -g BBR_GENERIC_KERNEL_INSTALLED=0
+declare -g BBR_KERNEL_RELEASE=""
+declare -g BBR_KERNEL_RESULT_FILE=""
 
 bbr::usage() {
-  printf '%s\n' "$(ui::tr '本地/远程安装器需 SHA-256 或明确 --allow-unverified-bbr-installer；生产环境建议将 bbrx_old 的 --bbr-raw-base 固定到提交。' 'Local/remote installers need SHA-256 or explicit --allow-unverified-bbr-installer; pin bbrx_old --bbr-raw-base to a commit for production.')"
+  printf '%s\n' "$(ui::tr '默认使用经 SHA-256 校验的随附安装器。自定义安装器需 SHA-256 或明确 --allow-unverified-bbr-installer；生产环境建议将 --bbr-raw-base 固定到提交。' 'The default bundled installer is SHA-256 verified. Custom installers need SHA-256 or explicit --allow-unverified-bbr-installer; pin --bbr-raw-base to a commit for production.')"
   if ui::zh; then
     cat <<'USAGE'
 用法：
@@ -150,7 +153,11 @@ bbr::load_args() {
   BBR_RAW_BASE="$(args::get bbr_raw_base "${SEEDBOX_BBR_RAW_BASE}")"
   BBR_LANG="$(args::get bbr_lang "${SEEDBOX_BBR_LANG:-}")"
   BBR_WORK_DIR="" BBR_SCRIPT="" BBR_WORK_ID="" BBR_USE_BUNDLED=0
-  if [[ "${BBR_ALGO}" == bbrx_old ]] && ! args::has bbr_script_url; then BBR_USE_BUNDLED=1; fi
+  BBR_GENERIC_KERNEL_INSTALLED=0 BBR_KERNEL_RELEASE="" BBR_KERNEL_RESULT_FILE=""
+  if ! args::has bbr_script_url && [[ "${BBR_INSTALLER_URL}" == "${SEEDBOX_BBR_DEFAULT_INSTALLER_URL}" ]]; then
+    BBR_USE_BUNDLED=1
+    BBR_INSTALLER_URL="${SEEDBOX_BBR_LOCAL_INSTALLER}"
+  fi
 
   [[ -n "${BBR_ALGO}" ]] || {
     ui::error "Missing --bbr-algo"
@@ -187,12 +194,21 @@ bbr::preflight() {
     ui::error "Invalid explicitly supplied BBR installer SHA-256."
     return 2
   }
-  if [[ "${BBR_ALGO}" == bbrx_old ]]; then
+  if [[ "${BBR_USE_BUNDLED}" == 1 ]]; then
+    bbr::verify_installer "${SEEDBOX_BBR_LOCAL_INSTALLER}" "${SEEDBOX_BBR_BUNDLED_SHA256}" || return $?
+    if [[ -n "${BBR_INSTALLER_SHA256}" ]]; then bbr::verify_installer "${SEEDBOX_BBR_LOCAL_INSTALLER}" "${BBR_INSTALLER_SHA256}" || return $?; fi
     detect::load_os || return $?
-    [[ "${SEEDBOX_OS_ID}:${SEEDBOX_OS_VERSION_ID:-}" != ubuntu:20.04* ]] || {
-      ui::error "The bundled bbrx_old installer requires Ubuntu 22.04+ (or supported Debian)."
+    case "${SEEDBOX_OS_ID}:${SEEDBOX_OS_VERSION_ID:-}" in
+      debian:11 | debian:11.* | debian:12 | debian:12.* | debian:13 | debian:13.* | ubuntu:20.04* | ubuntu:22.04* | ubuntu:24.04* | ubuntu:26.04*) ;;
+      *)
+        ui::error "The bundled BBR installer supports Debian 11/12/13 and Ubuntu 20.04/22.04/24.04/26.04 only."
+        return 2
+        ;;
+    esac
+    if [[ "${BBR_ALGO}" == bbrv3 && "${SEEDBOX_OS_ID}:${SEEDBOX_OS_VERSION_ID:-}" == ubuntu:20.04* ]]; then
+      ui::error "No bundled BBRv3 kernel package is configured for Ubuntu 20.04; choose a DKMS variant."
       return 2
-    }
+    fi
   fi
   if [[ "${BBR_USE_BUNDLED}" != 1 && -z "${BBR_INSTALLER_SHA256}" ]] && ! args::has allow_unverified_bbr_installer; then
     ui::error "Use --bbr-script-sha256 or explicitly --allow-unverified-bbr-installer."
@@ -208,6 +224,7 @@ bbr::create_workdir() {
   [[ -n "${BBR_WORK_DIR}" && -d "${BBR_WORK_DIR}" ]] || return 1
   BBR_WORK_ID="$(stat -c '%d:%i' -- "${BBR_WORK_DIR}")" || return $?
   BBR_SCRIPT="${BBR_WORK_DIR}/BBRInstall.sh"
+  BBR_KERNEL_RESULT_FILE="${BBR_WORK_DIR}/kernel-release"
 }
 
 bbr::cleanup_workdir() {
@@ -269,6 +286,18 @@ bbr::installer_supports_option() {
   grep -q -- "${opt}" "${BBR_SCRIPT}"
 }
 
+bbr::read_kernel_result() {
+  BBR_KERNEL_RELEASE=""
+  local file="${BBR_KERNEL_RESULT_FILE}" size kernel LC_ALL=C
+  [[ -n "${file}" && -f "${file}" && ! -L "${file}" && -r "${file}" ]] || return 1
+  size="$(stat -c %s -- "${file}")" || return $?
+  [[ "${size}" =~ ^[0-9]+$ ]] && ((size > 0 && size <= 256)) || return 1
+  IFS= read -r -d '' -n 257 kernel <"${file}" && return 1
+  kernel="${kernel%$'\n'}"
+  [[ "${kernel}" =~ ^[A-Za-z0-9][A-Za-z0-9.+_~-]*$ && ${#kernel} -le 255 && -f "/boot/vmlinuz-${kernel}" ]] || return 1
+  BBR_KERNEL_RELEASE="${kernel}"
+}
+
 bbr::run_installer() {
   local -a cmd
   local installer_lang="${BBR_LANG}"
@@ -309,10 +338,14 @@ bbr::run_installer() {
   fi
 
   if [[ -n "${installer_lang}" ]]; then
-    BBR_SYSCTL_DROPIN="${SEEDBOX_BBR_SYSCTL_DROPIN}" BBR_MODULES_LOAD_DROPIN="${SEEDBOX_BBR_MODULES_LOAD_DROPIN}" BBR_LANG="${installer_lang}" "${cmd[@]}"
+    BBR_SYSCTL_DROPIN="${SEEDBOX_BBR_SYSCTL_DROPIN}" BBR_MODULES_LOAD_DROPIN="${SEEDBOX_BBR_MODULES_LOAD_DROPIN}" BBR_KERNEL_RESULT_FILE="${BBR_KERNEL_RESULT_FILE}" BBR_LANG="${installer_lang}" "${cmd[@]}" || return $?
   else
-    BBR_SYSCTL_DROPIN="${SEEDBOX_BBR_SYSCTL_DROPIN}" BBR_MODULES_LOAD_DROPIN="${SEEDBOX_BBR_MODULES_LOAD_DROPIN}" "${cmd[@]}"
+    BBR_SYSCTL_DROPIN="${SEEDBOX_BBR_SYSCTL_DROPIN}" BBR_MODULES_LOAD_DROPIN="${SEEDBOX_BBR_MODULES_LOAD_DROPIN}" BBR_KERNEL_RESULT_FILE="${BBR_KERNEL_RESULT_FILE}" "${cmd[@]}" || return $?
   fi
+  if [[ "${BBR_ALGO}" == bbrv3 ]] && ! bbr::read_kernel_result; then
+    ui::warn "BBRv3 target kernel was not reported or could not be verified; status will remain unverified."
+  fi
+  return 0
 }
 
 bbr::is_dkms_algo() {
@@ -417,6 +450,7 @@ bbr::write_state() {
 component=bbr
 algo=${BBR_ALGO}
 status=installed
+kernel_release=${BBR_KERNEL_RELEASE}
 installer_url=${BBR_INSTALLER_URL}
 raw_base=${BBR_RAW_BASE}
 sysctl=${SEEDBOX_BBR_SYSCTL_DROPIN}
@@ -447,7 +481,7 @@ bbr::install_steps() {
   runner::must bbr.install "Run BBR installer" "" bbr::run_installer || return $?
   runner::must bbr.state "Save BBR state" "" bbr::write_state || return $?
 
-  if [[ "${BBR_ALGO}" == "bbrv3" ]]; then
+  if [[ "${BBR_ALGO}" == bbrv3 && (-z "${BBR_KERNEL_RELEASE}" || "$(uname -r)" != "${BBR_KERNEL_RELEASE}") ]]; then
     ui::warn "BBRv3 kernel package installation requires a reboot before it can become active."
     ui::pending "$(ui::tr '重启进入新安装的 BBRv3 内核，再执行 seedboxctl bbr status 检查。' 'Boot the installed BBRv3 kernel, then check seedboxctl bbr status.')"
   fi
@@ -475,8 +509,25 @@ bbr::state_algo() {
 bbr::module_loaded() { [[ -d "/sys/module/$1" ]]; }
 
 bbr::uninstall_dkms_algo() {
-  local algo="$1" version_dir version module
+  local algo="$1" version_dir version module active switched=0 rc=0
   module="tcp_${algo}"
+  active="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)" || active=""
+  if [[ "${active}" == "${algo}" ]]; then
+    sysctl -w net.ipv4.tcp_congestion_control=cubic || return $?
+    switched=1
+  fi
+  # Unload by registered name before DKMS deletes the module file. rmmod also
+  # handles a loaded module left behind by an earlier, partially failed removal.
+  if bbr::module_loaded "${module}"; then
+    rmmod "${module}" || rc=$?
+    if ((rc != 0)); then
+      if ((switched)); then
+        sysctl -w "net.ipv4.tcp_congestion_control=${algo}" || ui::warn "Could not restore the previous congestion-control selection."
+      fi
+      ui::error "$(ui::tr "无法卸载模块 ${module}；请先关闭活动连接，再从使用 Cubic 的新会话或本地控制台重试。未移除 DKMS 文件。" "Module ${module} could not be unloaded; close active connections and retry from a Cubic session or local console. DKMS removal was not attempted.")"
+      return "${rc}"
+    fi
+  fi
   if command -v dkms >/dev/null 2>&1 && [[ -d "/var/lib/dkms/${algo}" ]]; then
     for version_dir in "/var/lib/dkms/${algo}"/*; do
       [[ -d "${version_dir}" ]] || continue
@@ -484,11 +535,6 @@ bbr::uninstall_dkms_algo() {
       dkms remove -m "${algo}" -v "${version}" --all || return $?
     done
   fi
-  if [[ "$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)" == "${algo}" ]] \
-    && [[ -r /proc/sys/net/ipv4/tcp_available_congestion_control ]] && grep -qw cubic /proc/sys/net/ipv4/tcp_available_congestion_control; then
-    sysctl -w net.ipv4.tcp_congestion_control=cubic || return $?
-  fi
-  if bbr::module_loaded "${module}"; then modprobe -r "${module}" || return $?; fi
   depmod -a || return $?
 }
 

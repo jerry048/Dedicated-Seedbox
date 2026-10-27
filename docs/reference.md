@@ -2,7 +2,7 @@
 
 [Main guide](../README.md) · [简体中文](reference.zh-CN.md)
 
-Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.1. Start with the [main guide](../README.md) for routine work.
+Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.2. Start with the [main guide](../README.md) for routine work.
 
 ---
 
@@ -83,19 +83,19 @@ Run the dedicated example as root and the rootless example without root or sudo.
 
 #### Legacy wrapper aliases
 
-| Short option     | Canonical option or meaning                                                       |
-| ---------------- | --------------------------------------------------------------------------------- |
-| `-u USER`        | `--user USER`; rootless legacy usage sets the WebUI username                      |
-| `-p PASSWORD`    | `--password PASSWORD`; prefer a password file or stdin                            |
-| `-c N`           | `--cache N` (MiB)                                                                 |
-| `-q VERSION`     | `--qb-version VERSION`                                                            |
-| `-l VERSION`     | `--libtorrent-version VERSION`                                                    |
-| `-b`, `-v`, `-r` | Add autobrr, Vertex, or autoremove-torrents to `--components`                     |
-| `-3`, `-x`       | `--bbr-algo bbrv3`, `--bbr-algo bbrx`; installer trust options are still required |
-| `-o`             | Prompt for custom ports                                                           |
-| `-T`             | `--no-tuning`                                                                     |
-| `-L LANG`        | `--lang LANG`                                                                     |
-| `-h`             | `--help`                                                                          |
+| Short option     | Canonical option or meaning                                                           |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `-u USER`        | `--user USER`; rootless legacy usage sets the WebUI username                          |
+| `-p PASSWORD`    | `--password PASSWORD`; prefer a password file or stdin                                |
+| `-c N`           | `--cache N` (MiB)                                                                     |
+| `-q VERSION`     | `--qb-version VERSION`                                                                |
+| `-l VERSION`     | `--libtorrent-version VERSION`                                                        |
+| `-b`, `-v`, `-r` | Add autobrr, Vertex, or autoremove-torrents to `--components`                         |
+| `-3`, `-x`       | `--bbr-algo bbrv3`, `--bbr-algo bbrx`; uses the verified bundled installer by default |
+| `-o`             | Prompt for custom ports                                                               |
+| `-T`             | `--no-tuning`                                                                         |
+| `-L LANG`        | `--lang LANG`                                                                         |
+| `-h`             | `--help`                                                                              |
 
 After `Install.sh`, use `seedboxctl`. Examples use canonical long options; aliases remain supported.
 
@@ -475,6 +475,12 @@ sudo seedboxctl tuning uninstall
 ### BBR variants
 
 ##### Read more about the BBR variants at [here](https://github.com/jerry048/Trove/blob/main/BBR-Install/BBR/README.md)
+
+All variants default to the SHA-256-verified bundled installer: `sudo seedboxctl bbr install --bbr-algo bbrx`. DKMS variants support Debian 11–13 and Ubuntu 20.04/22.04/24.04/26.04 with kernel 5.4–7.1.x and matching headers. No BBRv3 package is configured for Ubuntu 20.04; availability elsewhere varies by OS/architecture. The options below show how to select a custom installer, which requires a checksum or explicit verification bypass.
+
+Ubuntu 20.04 amd64 validation: all five DKMS variants built and installed with GCC 9.4/DKMS 2.8.1 against `5.4.0-216-generic` and `5.15.0-139-generic`. Both kernels were booted in QEMU; each module passed loading, congestion-control selection, a SHA-256-verified 1 MiB loopback TCP transfer, restoration to Cubic, and unloading. ARM64, Secure Boot, and long-duration/performance testing are not covered by these checks.
+
+Uninstall unloads the module before removing DKMS files; busy modules retain their installation and state. BBRv3 status requires the running kernel to match the recorded `kernel_release`, not just the `bbr` algorithm name. Reinstall older BBRv3 records to capture that release. Custom BBRv3 installers must write the target release to the supplied `BBR_KERNEL_RESULT_FILE`; otherwise status remains unverified.
 
 ```bash
 sudo seedboxctl bbr install \

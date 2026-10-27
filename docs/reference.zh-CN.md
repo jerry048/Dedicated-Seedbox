@@ -2,7 +2,7 @@
 
 [主指南](../README.zh-CN.md) · [English](reference.md)
 
-Dedicated-Seedbox V2.1.1 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
+Dedicated-Seedbox V2.1.2 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
 
 ---
 
@@ -87,19 +87,19 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 
 #### 旧版包装器别名
 
-| 短选项           | 规范选项或含义                                                  |
-| ---------------- | --------------------------------------------------------------- |
-| `-u USER`        | `--user USER`；旧版 rootless 用法中用于设置 WebUI 用户名        |
-| `-p PASSWORD`    | `--password PASSWORD`；推荐密码文件或标准输入                   |
-| `-c N`           | `--cache N`（MiB）                                              |
-| `-q VERSION`     | `--qb-version VERSION`                                          |
-| `-l VERSION`     | `--libtorrent-version VERSION`                                  |
-| `-b`、`-v`、`-r` | 在 `--components` 中加入 autobrr、Vertex 或 autoremove-torrents |
-| `-3`、`-x`       | `--bbr-algo bbrv3`、`--bbr-algo bbrx`；仍需安装器信任选项       |
-| `-o`             | 交互式设置端口                                                  |
-| `-T`             | `--no-tuning`                                                   |
-| `-L LANG`        | `--lang LANG`                                                   |
-| `-h`             | `--help`                                                        |
+| 短选项           | 规范选项或含义                                                    |
+| ---------------- | ----------------------------------------------------------------- |
+| `-u USER`        | `--user USER`；旧版 rootless 用法中用于设置 WebUI 用户名          |
+| `-p PASSWORD`    | `--password PASSWORD`；推荐密码文件或标准输入                     |
+| `-c N`           | `--cache N`（MiB）                                                |
+| `-q VERSION`     | `--qb-version VERSION`                                            |
+| `-l VERSION`     | `--libtorrent-version VERSION`                                    |
+| `-b`、`-v`、`-r` | 在 `--components` 中加入 autobrr、Vertex 或 autoremove-torrents   |
+| `-3`、`-x`       | `--bbr-algo bbrv3`、`--bbr-algo bbrx`；默认使用经校验的随附安装器 |
+| `-o`             | 交互式设置端口                                                    |
+| `-T`             | `--no-tuning`                                                     |
+| `-L LANG`        | `--lang LANG`                                                     |
+| `-h`             | `--help`                                                          |
 
 `Install.sh` 完成后使用 `seedboxctl`。示例统一使用规范长选项，旧别名仍受支持。
 
@@ -487,6 +487,12 @@ sudo seedboxctl --lang zh-CN tuning uninstall
 ### BBR 变体
 
 ##### 关于 BBR 变体的更多信息，请参见[这里](https://github.com/jerry048/Trove/blob/main/BBR-Install/BBR/README.md)
+
+所有变体默认使用经 SHA-256 校验的随附安装器：`sudo seedboxctl --lang zh-CN bbr install --bbr-algo bbrx`。DKMS 变体支持 Debian 11–13 和 Ubuntu 20.04/22.04/24.04/26.04，需内核 5.4–7.1.x 及匹配的头文件。未配置 Ubuntu 20.04 的 BBRv3 软件包；其他系统的可用性取决于系统和架构。以下选项展示如何指定自定义安装器，需提供校验值或明确允许跳过校验。
+
+Ubuntu 20.04 amd64 验证：五种 DKMS 变体均使用 GCC 9.4/DKMS 2.8.1，针对 `5.4.0-216-generic` 和 `5.15.0-139-generic` 完成编译与安装。两个内核均在 QEMU 中启动；每个模块均通过加载、拥塞控制算法切换、经 SHA-256 校验的 1 MiB 回环 TCP 传输、恢复 Cubic 及卸载检查。这些检查不涵盖 ARM64、Secure Boot 或长时间运行与性能测试。
+
+卸载时先卸载内核模块，再移除 DKMS 文件；模块仍被占用时保留安装文件和状态。BBRv3 状态检查要求当前内核与记录的 `kernel_release` 一致，仅选中 `bbr` 算法不算通过。旧 BBRv3 记录需重新安装以记录目标内核。自定义 BBRv3 安装器须将目标内核版本标识写入传入的 `BBR_KERNEL_RESULT_FILE`；否则状态保持未验证。
 
 ```bash
 sudo seedboxctl --lang zh-CN bbr install \
