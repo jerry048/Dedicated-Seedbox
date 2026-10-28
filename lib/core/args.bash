@@ -52,7 +52,7 @@ args::options_for() {
   case "${context}" in
     deluge-build | deluge-upgrade)
       printf '%s' 'jobs source_dir deluge_version deluge_libtorrent_version libtorrent_version'
-      [[ "${context}" != deluge-upgrade ]] || printf ' user'
+      [[ "${context}" != deluge-upgrade ]] || printf ' user deluge_cache_mib cache_mib'
       ;;
     deluge-install) printf '%s' 'user password password_file password_stdin jobs source_dir deluge_version deluge_libtorrent_version libtorrent_version deluge_web_port deluge_rpc_port deluge_incoming_port deluge_cache_mib web_port rpc_port incoming_port cache_mib' ;;
     deluge-status) printf '%s' 'user json check' ;;

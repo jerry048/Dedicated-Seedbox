@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.3
+# Dedicated-Seedbox V2.1.4
 
 [English](README.md) · [详细参考](docs/reference.zh-CN.md)
 
@@ -91,7 +91,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 
 省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd；会提示运行环境已停止维护，但不以此阻止安装。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
 
-通过 `http://SERVER_IP:8112` 访问 WebUI，并将端口限制在可信来源；守护进程 RPC 仍仅监听回环地址。默认和 rootless 配置不包含 Deluge。组合安装及[升级、卸载命令](Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)见详细指南。
+通过 `http://SERVER_IP:8112` 访问 WebUI，并将端口限制在可信来源；守护进程 RPC 仍仅监听回环地址。默认和 rootless 配置不包含 Deluge。[升级、卸载命令](Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)见详细指南。
 
 <a id="upgrade-and-uninstall"></a>
 

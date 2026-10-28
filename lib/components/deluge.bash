@@ -30,7 +30,9 @@ deluge::usage() {
 Deluge 1.3.15、Python 2 和旧版 TLS 已停止维护，使用前请阅读安全提示。
 2.2.0 使用独立 Python 3 和版本组合专用运行环境；libtorrent 2.x 不支持旧版磁盘缓存参数。
 新配置的 WebUI 可通过服务器 IP 访问；RPC 仅监听回环地址。请限制 WebUI 的访问来源。
-upgrade 保留版本组合和设置；跨主版本/ABI 切换需手动迁移。卸载保留下载和会话数据；
+upgrade 默认保留版本组合；可显式升级到 2.2.0 或切换其 libtorrent 版本，并备份配置和会话。
+从 2.0.15 切换至 1.2.20 时须输入缓存 MiB；非交互运行请指定 --deluge-cache-mib N（也可用 --cache-mib）。
+不支持自动降级至 1.3.15；切换版本前须禁用第三方插件。卸载保留下载和会话数据；
 --purge 仅删除五个活动设置文件，保留插件、恢复快照和下载。
 USAGE
   else
@@ -60,7 +62,9 @@ Requires root and systemd; 1.3.15 supports Debian 11+/Ubuntu 20.04+, while 2.2.0
 Deluge 1.3.15, Python 2 and legacy TLS are unsupported; review the security guidance.
 2.2.0 uses private Python 3 and pair-specific runtimes; libtorrent 2.x has no legacy disk cache option.
 New profiles allow WebUI access through the server IP; RPC remains loopback-only. Restrict WebUI access to trusted sources.
-Upgrade preserves the selected pair/settings; major/ABI switches require manual migration. Uninstall keeps data;
+Upgrade keeps the pair by default; explicitly select 2.2.0 or its other libtorrent version to migrate with profile/session backups.
+Switching from 2.0.15 to 1.2.20 prompts for cache MiB; non-interactive runs need --deluge-cache-mib N (alias: --cache-mib).
+Automatic downgrade to 1.3.15 is unsupported; disable third-party plugins before switching. Uninstall keeps data;
 --purge removes only five active settings files, not plugins, snapshots or downloads.
 USAGE
   fi
@@ -318,16 +322,6 @@ deluge::read_state_for_user() {
   fs::assert_privileged_path "${DE_STATE}" || return $?
   status::read_state "${DE_STATE}" || return $?
   local recorded_version="${STATUS_STATE[deluge_version]:-1.3.15}" recorded_lib="${STATUS_STATE[libtorrent_version]:-1.1.14}"
-  if args::has deluge_libtorrent_version && args::has libtorrent_version; then
-    [[ "${ARGS[deluge_libtorrent_version]#v}" == "${ARGS[libtorrent_version]#v}" ]] || return 2
-  fi
-  if args::has deluge_version || args::has deluge_libtorrent_version || args::has libtorrent_version; then
-    local requested_version="$(args::get deluge_version "${recorded_version}")" requested_lib="$(args::get deluge_libtorrent_version "$(args::get libtorrent_version "${recorded_lib}")")"
-    [[ "${requested_version#v}" == "${recorded_version}" && "${requested_lib#v}" == "${recorded_lib}" ]] || {
-      ui::error "$(ui::tr '版本/ABI 切换需手动迁移或使用新 Unix 账号；upgrade 保留已记录的版本组合。' 'Version/ABI switches require manual migration or a new Unix account; upgrade preserves the recorded pair.')"
-      return 2
-    }
-  fi
   deluge::set_runtime "${recorded_version}" "${recorded_lib}" || return $?
   deluge::paths || return $?
   [[ "${STATUS_STATE[component]:-}" == deluge-instance && "${STATUS_STATE[user]:-}" == "${DE_USER}" &&
@@ -335,6 +329,31 @@ deluge::read_state_for_user() {
     "${STATUS_STATE[config]:-}" == "${DE_CONFIG}" && "${STATUS_STATE[service]:-}" == "${DE_UNIT}" &&
     "${STATUS_STATE[web_service]:-}" == "${DE_WEB_UNIT}" && "${STATUS_STATE[service_mode]:-}" == system ]] || return 1
   deluge::check_units 1
+}
+
+deluge::select_upgrade_target() {
+  local version lib
+  version="$(args::get deluge_version "${DE_VERSION}")"
+  if args::has deluge_libtorrent_version && args::has libtorrent_version; then
+    [[ "${ARGS[deluge_libtorrent_version]#v}" == "${ARGS[libtorrent_version]#v}" ]] || {
+      ui::error "$(ui::tr 'Deluge 选项与别名值冲突。' 'Conflicting Deluge option and alias values.')"
+      return 2
+    }
+  fi
+  if args::has deluge_libtorrent_version || args::has libtorrent_version; then
+    lib="$(args::get deluge_libtorrent_version "$(args::get libtorrent_version)")"
+  elif [[ "${version#v}" == "${DE_VERSION}" ]]; then
+    lib="${DE_LT_VERSION}"
+  elif [[ "${version#v}" == 2.2.0 ]]; then
+    lib=2.0.15
+  else
+    lib=1.1.14
+  fi
+  if [[ "${DE_VERSION}" == 2.2.0 && "${version#v}" == 1.3.15 ]]; then
+    ui::error "$(ui::tr '不支持自动降级至 Deluge 1.3.15；请保留备份并手动迁移。' 'Automatic downgrade to Deluge 1.3.15 is unsupported; retain backups and migrate manually.')"
+    return 2
+  fi
+  deluge::set_runtime "${version#v}" "${lib#v}"
 }
 
 deluge::read_settings() {
@@ -349,6 +368,42 @@ deluge::read_settings() {
       data) DE_DATA="${value}" ;;
     esac
   done <<<"${output}"
+}
+
+deluge::select_upgrade_cache() {
+  local target_lib="$1" value supplied=0
+  DE_UPGRADE_CACHE_MIB=''
+  if args::has deluge_cache_mib && args::has cache_mib && [[ "${ARGS[deluge_cache_mib]}" != "${ARGS[cache_mib]}" ]]; then
+    ui::error "$(ui::tr 'Deluge 选项与别名值冲突。' 'Conflicting Deluge option and alias values.')"
+    return 2
+  fi
+  if args::has deluge_cache_mib || args::has cache_mib; then
+    supplied=1
+    value="$(args::get deluge_cache_mib "$(args::get cache_mib)")"
+  fi
+  if [[ "${DE_LT_VERSION}" != 2.0.15 || "${target_lib}" != 1.2.20 ]]; then
+    if ((supplied)); then
+      ui::error "$(ui::tr '升级缓存参数仅用于从 libtorrent 2.0.15 切换至 1.2.20；其他升级保留已有缓存设置。' 'Upgrade cache options are only for switching from libtorrent 2.0.15 to 1.2.20; other upgrades keep existing cache settings.')"
+      return 2
+    fi
+    return 0
+  fi
+  if ((supplied == 0)) && [[ ! -t 0 ]]; then
+    ui::error "$(ui::tr '切换至 libtorrent 1.2.20 需要选择缓存大小；非交互运行请指定 --deluge-cache-mib N（单位 MiB）。' 'Switching to libtorrent 1.2.20 requires a cache size; non-interactive runs must pass --deluge-cache-mib N (MiB).')"
+    return 2
+  fi
+  while true; do
+    if ((supplied == 0)); then
+      printf '%s' "$(ui::tr '请输入 libtorrent 1.2.20 缓存大小（MiB，1–1048576，无默认值）：' 'Enter libtorrent 1.2.20 cache size (MiB, 1–1048576; no default): ')" >&2
+      IFS= read -r value || return 2
+    fi
+    if [[ "${value}" =~ ^[1-9][0-9]{0,6}$ ]] && ((value <= 1048576)); then
+      DE_UPGRADE_CACHE_MIB="${value}"
+      return 0
+    fi
+    ui::error "$(ui::tr '缓存大小必须是 1–1048576 范围内的整数（单位 MiB）。' 'Cache size must be an integer from 1 to 1048576 MiB.')"
+    ((supplied == 0)) || return 2
+  done
 }
 
 deluge::write_state() {
@@ -410,6 +465,8 @@ deluge::confirm_purge() {
 
 deluge::healthcheck() {
   local attempt unit pid
+  local -a session_options=()
+  [[ -z "${DE_SESSION_EXPECTED:-}" ]] || session_options=(--expected-session "${DE_SESSION_EXPECTED}")
   for ((attempt = 0; attempt < 30; attempt++)); do
     if systemd::is_active "${DE_UNIT}" && systemd::is_active "${DE_WEB_UNIT}"; then
       if [[ -n "${DE_PASSWORD_FILE:-}" ]]; then
@@ -417,7 +474,7 @@ deluge::healthcheck() {
           --web-port "${DE_WEB_PORT}" --deluge-version "${DE_VERSION}" <"${DE_PASSWORD_FILE}" && break
       else
         user::run "${DE_USER}" env -u PYTHONHOME -u PYTHONPATH -u LD_LIBRARY_PATH PYTHONNOUSERSITE=1 \
-          "${DE_PYTHON}" -s "${SEEDBOX_ROOT}/lib/components/deluge/rpc-check.py" --rpc-port "${DE_RPC_PORT}" --deluge-version "${DE_VERSION}" \
+          "${DE_PYTHON}" -s "${SEEDBOX_ROOT}/lib/components/deluge/rpc-check.py" --rpc-port "${DE_RPC_PORT}" --deluge-version "${DE_VERSION}" "${session_options[@]}" \
           && curl --fail --silent --max-time 5 --noproxy '*' "http://127.0.0.1:${DE_WEB_PORT}/" >/dev/null && break
       fi
     fi
@@ -490,17 +547,25 @@ deluge::operation_cleanup() {
   local rc="$1"
   if ((rc != 0 && DE_ACTIVATING)); then deluge::disable || true; fi
   if ((rc != 0 && DE_UPGRADE_STOPPED)); then
-    deluge::stop || true
-    if [[ -n "${DE_SNAPSHOT}" ]]; then
-      deluge::config restore --snapshot "${DE_SNAPSHOT}" || ui::warn "$(ui::tr '配置自动恢复失败；请保留快照并手动检查。' 'Automatic settings restore failed; retain the snapshot and review manually.')"
+    if deluge::stop; then
+      if [[ -n "${DE_OLD_VERSION}" ]]; then
+        deluge::set_runtime "${DE_OLD_VERSION}" "${DE_OLD_LT_VERSION}" || true
+      fi
+      if [[ -n "${DE_SNAPSHOT}" ]]; then
+        local restore_action=restore
+        ((DE_SWITCHING == 0)) || restore_action=restore-upgrade
+        deluge::config "${restore_action}" --snapshot "${DE_SNAPSHOT}" || ui::warn "$(ui::tr '配置自动恢复失败；请保留快照并手动检查。' 'Automatic settings restore failed; retain the snapshot and review manually.')"
+      fi
+      if ((DE_RECONCILING)); then
+        printf '%s\n' "${DE_OLD_UNIT}" | fs::write_file "/etc/systemd/system/${DE_UNIT}" 0644 root root || true
+        printf '%s\n' "${DE_OLD_WEB_UNIT}" | fs::write_file "/etc/systemd/system/${DE_WEB_UNIT}" 0644 root root || true
+        printf '%s\n' "${DE_OLD_STATE}" | fs::write_file "${DE_STATE}" 0600 root root || true
+        systemd::daemon_reload || true
+      fi
+      ui::warn "$(ui::tr "升级未完成；服务保持停止，恢复快照：${DE_SNAPSHOT:-none}" "Upgrade incomplete; services left stopped; recovery snapshot: ${DE_SNAPSHOT:-none}")"
+    else
+      ui::warn "$(ui::tr '无法确认 Deluge 已停止；未尝试恢复配置，请保留快照并手动检查。' 'Deluge could not be stopped; settings restore was not attempted. Retain snapshots and review manually.')"
     fi
-    if ((DE_RECONCILING)); then
-      printf '%s\n' "${DE_OLD_UNIT}" | fs::write_file "/etc/systemd/system/${DE_UNIT}" 0644 root root || true
-      printf '%s\n' "${DE_OLD_WEB_UNIT}" | fs::write_file "/etc/systemd/system/${DE_WEB_UNIT}" 0644 root root || true
-      printf '%s\n' "${DE_OLD_STATE}" | fs::write_file "${DE_STATE}" 0600 root root || true
-      systemd::daemon_reload || true
-    fi
-    ui::warn "$(ui::tr "升级未完成；服务保持停止，恢复快照：${DE_SNAPSHOT:-none}" "Upgrade incomplete; services left stopped; recovery snapshot: ${DE_SNAPSHOT:-none}")"
   fi
   [[ -z "${DE_PASSWORD_FILE}" ]] || secrets::cleanup_file "${DE_PASSWORD_FILE}" || true
   if [[ -n "${DE_LOCK_FD}" ]]; then exec {DE_LOCK_FD}>&-; fi
@@ -511,6 +576,7 @@ deluge::operation_cleanup() {
 deluge::managed_operation() {
   local DE_PASSWORD_FILE='' DE_ACTIVATING=0 DE_UPGRADE_STOPPED=0 DE_SNAPSHOT='' DE_LOCK_FD=''
   local DE_RECONCILING=0 DE_OLD_UNIT='' DE_OLD_WEB_UNIT='' DE_OLD_STATE=''
+  local DE_OLD_VERSION='' DE_OLD_LT_VERSION='' DE_SWITCHING=0 DE_SESSION_EXPECTED='' DE_UPGRADE_CACHE_MIB=''
   local rc=0 saved_traps saved_umask
   saved_umask="$(umask)"
   umask 077
@@ -563,8 +629,27 @@ deluge::upgrade_steps() {
   systemd::require || return $?
   deluge::lock || return $?
   deluge::read_state_for_user || return $?
+  DE_OLD_VERSION="${DE_VERSION}" DE_OLD_LT_VERSION="${DE_LT_VERSION}"
+  deluge::select_upgrade_target || return $?
+  local target_version="${DE_VERSION}" target_lib="${DE_LT_VERSION}"
+  if [[ "${target_version}:${target_lib}" != "${DE_OLD_VERSION}:${DE_OLD_LT_VERSION}" ]]; then
+    DE_SWITCHING=1
+  fi
+  deluge::require_platform || {
+    ui::error "$(ui::tr '所选 Deluge 版本不支持当前系统。' 'The selected Deluge version does not support this host.')"
+    return 2
+  }
   deluge::warn_legacy || return $?
-  # This version-pinned upgrade reconciles managed services, not the shared ABI.
+  deluge::set_runtime "${DE_OLD_VERSION}" "${DE_OLD_LT_VERSION}" || return $?
+  deluge::read_settings || return $?
+  deluge::select_upgrade_cache "${target_lib}" || return $?
+  local -a migration_options=(--target-deluge-version "${target_version}" --target-libtorrent-version "${target_lib}")
+  [[ -z "${DE_UPGRADE_CACHE_MIB}" ]] || migration_options+=(--target-cache-mib "${DE_UPGRADE_CACHE_MIB}")
+  if ((DE_SWITCHING)); then
+    deluge::config plan-upgrade "${migration_options[@]}" || return $?
+  fi
+  # Build/verify the separate destination before interrupting the current daemon.
+  deluge::set_runtime "${target_version}" "${target_lib}" || return $?
   runner::must deluge.runtime "$(ui::tr '编译/验证 Deluge 私有运行环境' 'Build/verify private Deluge runtime')" "" deluge::build_runtime || return $?
   deluge::check_units 1 || return $?
   DE_OLD_UNIT="$(cat -- "/etc/systemd/system/${DE_UNIT}")" || return $?
@@ -572,8 +657,16 @@ deluge::upgrade_steps() {
   DE_OLD_STATE="$(cat -- "${DE_STATE}")" || return $?
   DE_UPGRADE_STOPPED=1
   runner::must deluge.stop "$(ui::tr '停止 Deluge 服务' 'Stop Deluge services')" "${DE_UNIT}" deluge::stop || return $?
-  DE_SNAPSHOT="$(deluge::config snapshot)" || return $?
+  deluge::set_runtime "${DE_OLD_VERSION}" "${DE_OLD_LT_VERSION}" || return $?
+  local snapshot_action=snapshot
+  ((DE_SWITCHING == 0)) || snapshot_action=snapshot-upgrade
+  DE_SNAPSHOT="$(deluge::config "${snapshot_action}")" || return $?
   ui::kv "$(ui::tr '升级前配置快照' 'Pre-upgrade config snapshot')" "${DE_SNAPSHOT}"
+  if ((DE_SWITCHING)); then
+    DE_SESSION_EXPECTED="${DE_SNAPSHOT}/expected-torrents.json"
+    deluge::config migrate-upgrade "${migration_options[@]}" || return $?
+  fi
+  deluge::set_runtime "${target_version}" "${target_lib}" || return $?
   deluge::read_settings || return $?
   DE_RECONCILING=1
   runner::must deluge.units "$(ui::tr '写入 Deluge 服务' 'Write Deluge services')" "${DE_UNIT}" deluge::write_services || return $?

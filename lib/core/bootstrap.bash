@@ -37,13 +37,13 @@ source "${SEEDBOX_ROOT}/lib/core/status.bash"
 source "${SEEDBOX_ROOT}/lib/core/logs.bash"
 
 seedbox::version() {
-  printf 'seedboxctl V2.1.3\n'
+  printf 'seedboxctl V2.1.4\n'
 }
 
 seedbox::usage() {
   if ui::zh; then
     cat <<'USAGE'
-seedboxctl - Dedicated-Seedbox V2.1.3
+seedboxctl - Dedicated-Seedbox V2.1.4
 
 用法：
   seedboxctl install --profile {dedicated|shared} [OPTIONS]
@@ -108,7 +108,7 @@ Deluge 1.3.15/1.1.14 仍为默认，属于已停止维护的旧版；详情见 d
 USAGE
   else
     cat <<'USAGE'
-seedboxctl - Dedicated-Seedbox V2.1.3
+seedboxctl - Dedicated-Seedbox V2.1.4
 
 Usage:
   seedboxctl install --profile {dedicated|shared} [OPTIONS]

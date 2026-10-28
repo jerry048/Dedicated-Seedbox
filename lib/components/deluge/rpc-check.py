@@ -15,6 +15,7 @@ from twisted.internet import reactor
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--rpc-port", type=int, required=True)
+    parser.add_argument("--expected-session")
     parser.add_argument(
         "--deluge-version", choices=("1.3.15", "2.2.0"), default="1.3.15"
     )
@@ -52,6 +53,23 @@ def main():
     if len(matches) != 1:
         return 1
     username, password = matches[0][3:5]
+    expected = None
+    if args.expected_session:
+        descriptor = os.open(
+            args.expected_session, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+        )
+        with os.fdopen(descriptor, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+                return 1
+            data = stream.read(4 * 1024 * 1024 + 1)
+            if len(data) > 4 * 1024 * 1024:
+                return 1
+            expected = json.loads(data.decode("utf-8"))
+        if not isinstance(expected, list) or any(
+            not isinstance(item, str) for item in expected
+        ):
+            return 1
     result = [1]
 
     def finish(value=None):
@@ -69,6 +87,19 @@ def main():
             else client.daemon.get_version()
         )
     )
+    if expected is not None:
+
+        def check_version(version):
+            if version != args.deluge_version:
+                raise ValueError("Unexpected daemon version")
+            return client.core.get_session_state()
+
+        deferred.addCallback(check_version)
+        deferred.addCallback(
+            lambda identifiers: (
+                args.deluge_version if sorted(identifiers) == expected else None
+            )
+        )
     deferred.addCallbacks(finish, lambda failure: finish())
     reactor.run()
     return result[0]

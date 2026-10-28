@@ -2,7 +2,7 @@
 
 [主指南](../README.zh-CN.md) · [English](reference.md)
 
-Dedicated-Seedbox V2.1.3 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
+Dedicated-Seedbox V2.1.4 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
 
 ---
 
@@ -277,9 +277,14 @@ sudo seedboxctl --lang zh-CN deluge add-user \
 
 ```bash
 sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser
+sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
 sudo seedboxctl --lang zh-CN deluge status --user delugeuser --check
 sudo seedboxctl --lang zh-CN deluge uninstall --user delugeuser
 ```
+
+Deluge 升级不指定版本时保留已记录的组合。显式目标支持 1.3.15 → 2.2.0，以及 2.2.0 的 libtorrent 1.2.20/2.0.15 运行环境切换，并完整备份配置目录、检查种子加载。拒绝降级至 1.3.15；请先禁用第三方插件。设置转换及恢复说明见 [Deluge 升级指南](../Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)。
+
+从 libtorrent 2.0.15 切换至 1.2.20 时，会在构建或停止服务前要求输入缓存大小（MiB，1–1048576，无默认值）。非交互升级须指定 `--deluge-cache-mib N` 或 `--cache-mib N`；这两个升级参数仅用于此切换，其他升级保留已有缓存设置。
 
 ### qBittorrent
 

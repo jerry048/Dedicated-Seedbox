@@ -2,7 +2,7 @@
 
 [Main guide](../README.md) · [简体中文](reference.zh-CN.md)
 
-Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.3. Start with the [main guide](../README.md) for routine work.
+Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.4. Start with the [main guide](../README.md) for routine work.
 
 ---
 
@@ -265,9 +265,14 @@ Upgrade, status, uninstall:
 
 ```bash
 sudo seedboxctl deluge upgrade --user delugeuser
+sudo seedboxctl deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
 sudo seedboxctl deluge status --user delugeuser --check
 sudo seedboxctl deluge uninstall --user delugeuser
 ```
+
+Without version options, Deluge upgrade keeps the recorded pair. Explicit targets support 1.3.15 → 2.2.0 and switching between 2.2.0's libtorrent 1.2.20/2.0.15 runtimes, with a full-profile backup and torrent-load checks. Downgrades to 1.3.15 are refused. Disable third-party plugins first; see the [Deluge upgrade guide](../Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall) for settings conversion and recovery.
+
+Switching from libtorrent 2.0.15 to 1.2.20 asks for a cache size in MiB (1–1048576, no default) before building or stopping services. Non-interactive upgrades must supply `--deluge-cache-mib N` or `--cache-mib N`; these upgrade options are accepted only for this switch. Other upgrades preserve existing cache settings.
 
 ### qBittorrent
 

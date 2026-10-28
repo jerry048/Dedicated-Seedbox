@@ -3,14 +3,17 @@
 
 import argparse
 import hashlib
+import io
 import json
 import os
+import pickle
 import pwd
 import secrets
 import stat
+import subprocess
 import sys
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 FILES = ("core.conf", "web.conf", "hostlist.conf.1.2", "auth", "ltconfig.conf")
 DELUGE_VERSION = "1.3.15"
@@ -59,14 +62,14 @@ def write(path, value, config=True, file_version=1):
             stream.write(value)
 
 
-def read_file(path):
+def read_file(path, maximum=MAX_FILE):
     descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     with os.fdopen(descriptor, "rb") as stream:
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
             raise ValueError("Unsafe settings file: " + str(path))
-        data = stream.read(MAX_FILE + 1)
-    if len(data) > MAX_FILE:
+        data = stream.read(maximum + 1)
+    if len(data) > maximum:
         raise ValueError("Settings file exceeds the size limit: " + str(path))
     return data
 
@@ -249,6 +252,381 @@ def purge(profile):
     print(
         "Removed active Deluge settings only; downloads, session data and recovery snapshots are kept"
     )
+
+
+class SavedTorrent:
+    """Inert substitute for Deluge's serialized TorrentState; never import plugins."""
+
+
+class SavedSession:
+    """Inert substitute for TorrentManagerState."""
+
+
+class SessionReader(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == "deluge.core.torrentmanager":
+            if name == "TorrentState":
+                return SavedTorrent
+            if name == "TorrentManagerState":
+                return SavedSession
+        raise ValueError("Unsupported object in Deluge session; migrate manually")
+
+
+def session_ids(profile):
+    state = profile / "state"
+    if not state.exists():
+        return []
+    directory(state)
+    path = state / "torrents.state"
+    if not path.exists():
+        if any(state.iterdir()):
+            raise ValueError("Missing torrents.state in a nonempty session directory")
+        return []
+    saved = SessionReader(
+        io.BytesIO(read_file(path, 128 * 1024 * 1024)), encoding="utf8"
+    ).load()
+    if not isinstance(saved, SavedSession) or not isinstance(saved.torrents, list):
+        raise TypeError("Invalid Deluge session state")
+    identifiers = set()
+    for torrent in saved.torrents:
+        identifier = getattr(torrent, "torrent_id", None)
+        if (
+            not isinstance(torrent, SavedTorrent)
+            or not isinstance(identifier, str)
+            or len(identifier) != 40
+            or any(c not in "0123456789abcdef" for c in identifier)
+            or identifier in identifiers
+        ):
+            raise ValueError("Invalid or duplicate torrent ID in Deluge session")
+        identifiers.add(identifier)
+    return sorted(identifiers)
+
+
+def profile_tree(base):
+    """Inventory only owner-controlled regular files; never follow links."""
+    directory(base)
+    files, directories = {}, {}
+
+    def walk_error(error):
+        raise error
+
+    for parent, names, filenames in os.walk(
+        base, followlinks=False, onerror=walk_error
+    ):
+        parent = Path(parent)
+        directory(parent)
+        if parent == base:
+            names[:] = [name for name in names if not name.startswith(".pre-upgrade-")]
+        for name in names:
+            path = parent / name
+            directory(path)
+            directories[path.relative_to(base).as_posix()] = stat.S_IMODE(
+                path.stat().st_mode
+            )
+        for name in filenames:
+            path = parent / name
+            with os.fdopen(
+                os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb"
+            ) as stream:
+                info = os.fstat(stream.fileno())
+                if (
+                    not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.getuid()
+                    or info.st_nlink != 1
+                ):
+                    raise ValueError("Unsafe profile file: " + str(path))
+                digest = hashlib.sha256()
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            files[path.relative_to(base).as_posix()] = {
+                "sha256": digest.hexdigest(),
+                "mode": stat.S_IMODE(info.st_mode),
+            }
+    return files, directories
+
+
+def copy_profile_file(source, target, metadata):
+    descriptor, temporary = tempfile.mkstemp(prefix=".upgrade-copy-", dir=target.parent)
+    try:
+        digest = hashlib.sha256()
+        with os.fdopen(descriptor, "wb") as output:
+            with os.fdopen(
+                os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb"
+            ) as stream:
+                info = os.fstat(stream.fileno())
+                if (
+                    not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.getuid()
+                    or info.st_nlink != 1
+                ):
+                    raise ValueError("Unsafe snapshot input")
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    output.write(chunk)
+                    digest.update(chunk)
+            output.flush()
+            os.fsync(output.fileno())
+        if digest.hexdigest() != metadata["sha256"]:
+            raise ValueError("Profile changed while copying; retain recovery snapshots")
+        os.chmod(temporary, metadata["mode"] & 0o777)
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def snapshot_upgrade(profile):
+    read_settings(profile)
+    identifiers = session_ids(profile)
+    files, directories = profile_tree(profile)
+    target = Path(tempfile.mkdtemp(prefix=".pre-upgrade-", dir=profile))
+    tree = target / "profile"
+    directory(tree, create=True)
+    for name in sorted(directories, key=lambda name: len(PurePosixPath(name).parts)):
+        directory(tree / name, create=True)
+    for name, metadata in files.items():
+        copy_profile_file(profile / name, tree / name, metadata)
+    write(
+        target / "upgrade.json",
+        json.dumps({"files": files, "directories": directories}),
+        config=False,
+    )
+    write(target / "expected-torrents.json", json.dumps(identifiers), config=False)
+    print(target)
+
+
+def restore_upgrade(profile, source):
+    source = Path(source)
+    if source.parent != profile or not source.name.startswith(".pre-upgrade-"):
+        raise ValueError("Invalid upgrade snapshot path")
+    directory(source)
+    tree = source / "profile"
+    files, directories = profile_tree(tree)
+    recorded = json.loads(
+        read_file(source / "upgrade.json"), object_pairs_hook=unique_pairs
+    )
+    # Snapshot directories are private, irrespective of the original directory mode.
+    if files != recorded.get("files") or set(directories) != set(
+        recorded.get("directories", {})
+    ):
+        raise ValueError("Upgrade snapshot identity changed")
+    current_files, current_dirs = profile_tree(profile)
+    for name in sorted(directories, key=lambda name: len(PurePosixPath(name).parts)):
+        directory(profile / name, create=True)
+    for name, metadata in files.items():
+        copy_profile_file(tree / name, profile / name, metadata)
+    for name in current_files.keys() - files.keys():
+        (profile / name).unlink()
+    for name in sorted(
+        current_dirs.keys() - directories.keys(),
+        key=lambda name: len(PurePosixPath(name).parts),
+        reverse=True,
+    ):
+        (profile / name).rmdir()
+    for name, mode in recorded["directories"].items():
+        os.chmod(profile / name, mode & 0o777)
+
+
+def upgrade_values(profile, target_version, target_lib, target_cache_mib=None):
+    if target_version != "2.2.0" or target_lib not in ("1.2.20", "2.0.15"):
+        raise ValueError("Automatic downgrade to Deluge 1.3.15 is not supported")
+    if LT_VERSION == "2.0.15" and target_lib == "1.2.20":
+        if type(target_cache_mib) is not int or not 1 <= target_cache_mib <= 1048576:
+            raise ValueError(
+                "Switching to libtorrent 1.2.20 requires an explicit cache size of 1..1048576 MiB"
+            )
+    elif target_cache_mib is not None:
+        raise ValueError(
+            "Upgrade cache options are only for switching from libtorrent 2.0.15 to 1.2.20"
+        )
+    raw, values = read_settings(profile)
+    core = decode_config(raw["core.conf"])
+    if core.get("plugins_location") != str(profile / "plugins"):
+        raise ValueError("Custom plugin directories require manual migration")
+    for key in (
+        "download_location",
+        "move_completed_path",
+        "torrentfiles_location",
+        "autoadd_location",
+    ):
+        location = core.get(key)
+        if isinstance(location, str) and Path(location).resolve().is_relative_to(
+            profile.resolve()
+        ):
+            raise ValueError(
+                "Move download/watch directories outside the profile before migration"
+            )
+    if set(core.get("enabled_plugins", [])) - {"ltConfig"}:
+        raise ValueError(
+            "Disable third-party plugins before switching Deluge/libtorrent versions"
+        )
+    web = decode_config(raw["web.conf"], 1 if DELUGE_VERSION == "1.3.15" else 2)
+    if web.get("enabled_plugins"):
+        raise ValueError("Disable third-party WebUI plugins before switching versions")
+    host_name = "hostlist.conf.1.2" if DELUGE_VERSION == "1.3.15" else "hostlist.conf"
+    hosts = decode_config(raw[host_name], 1 if DELUGE_VERSION == "1.3.15" else 3)
+    if DELUGE_VERSION == "1.3.15" and (profile / "hostlist.conf").exists():
+        raise ValueError(
+            "Unexpected modern hostlist in a legacy profile; review manually"
+        )
+    # Validate the legacy session before building or stopping services. The target
+    # daemon performs its native conversion; health checks must load every ID.
+    session_ids(profile)
+    profile_tree(profile)
+    return raw, values, core, web, hosts
+
+
+def migrate_upgrade(profile, target_version, target_lib, target_cache_mib=None):
+    raw, values, core, web, hosts = upgrade_values(
+        profile, target_version, target_lib, target_cache_mib
+    )
+    prefix = Path("/opt/deluge-2.2.0-lt-" + target_lib)
+    supported = json.loads(
+        subprocess.check_output(
+            [
+                str(prefix / "bin/python3"),
+                "-I",
+                "-c",
+                "import json,libtorrent; print(json.dumps(libtorrent.default_settings()))",
+            ],
+            timeout=30,
+        )
+    )
+    blocks = values["cache_blocks"]
+    if blocks == "n/a" and target_lib == "1.2.20":
+        blocks = target_cache_mib * 64
+    previous = decode_config(raw["ltconfig.conf"])
+    # Builds retain deprecated API symbols, so default_settings() alone does
+    # not establish whether libtorrent 2 actually implements a cache control.
+    cache_controls = {
+        "cache_size",
+        "cache_expiry",
+        "cache_size_volatile",
+        "cache_buffer_chunk_size",
+        "default_cache_min_age",
+        "guided_read_cache",
+        "read_cache_line_size",
+        "write_cache_line_size",
+        "use_disk_cache_pool",
+        "low_prio_disk",
+    }
+    if target_lib == "2.0.15":
+        supported = {
+            key: value for key, value in supported.items() if key not in cache_controls
+        }
+    removed_controls = set(previous.get("settings", {})) - set(supported)
+    settings = modern_preset(target_lib, blocks)
+    settings.update(
+        {
+            key: value
+            for key, value in previous.get("settings", {}).items()
+            if key in supported
+            and not (LT_VERSION == "2.0.15" and key in cache_controls)
+        }
+    )
+    # Keep only controls implemented by the destination libtorrent ABI.
+    previous["settings"] = {
+        key: value for key, value in settings.items() if key in supported
+    }
+    plugin_name = "ltConfig-2.0.0.egg"
+    plugin = profile / "plugins" / plugin_name
+    directory(profile / "plugins")
+    plugin_data = (prefix / "plugins" / plugin_name).read_bytes()
+    if (plugin.exists() or plugin.is_symlink()) and read_file(plugin) != plugin_data:
+        raise ValueError("Existing ltConfig plugin differs; review manually")
+    auth = raw["auth"]
+    if DELUGE_VERSION == "1.3.15":
+        old_plugin = profile / "plugins/ltConfig-0.3.1-py2.7.egg"
+        if (
+            read_file(old_plugin)
+            != Path("/opt/deluge-1.3.15/plugins/ltConfig-0.3.1-py2.7.egg").read_bytes()
+        ):
+            raise ValueError("Legacy ltConfig plugin differs; review manually")
+        entries = hosts.get("hosts", [])
+        matches = [
+            entry
+            for entry in entries
+            if isinstance(entry, list)
+            and len(entry) == 5
+            and entry[1] == "127.0.0.1"
+            and entry[2] == values["rpc_port"]
+            and entry[3] == pwd.getpwuid(os.getuid()).pw_name
+        ]
+        if len(matches) != 1:
+            raise ValueError("Cannot identify the managed local RPC account")
+        entry = matches[0]
+        local_accounts = [
+            line.split(b":")
+            for line in auth.splitlines()
+            if line.split(b":", 1)[0] == b"localclient"
+        ]
+        if local_accounts:
+            if (
+                len(local_accounts) != 1
+                or len(local_accounts[0]) != 3
+                or local_accounts[0][2] != b"10"
+                or not local_accounts[0][1]
+            ):
+                raise ValueError("Invalid localclient credential; review manually")
+            # A running legacy daemon normally creates this separate account.
+            # Reuse its credential rather than replacing either existing login.
+            entry[4] = local_accounts[0][1].decode("utf-8")
+        else:
+            auth = auth.rstrip(b"\n") + ("\nlocalclient:" + entry[4] + ":10\n").encode(
+                "utf-8"
+            )
+        entry[3] = "localclient"
+        for key in ("autoadd_enable", "autoadd_location", "enc_prefer_rc4"):
+            core.pop(key, None)
+        web["sessions"] = {}
+        web.setdefault("language", "")
+    if target_lib == "2.0.15":
+        core.pop("cache_size", None)
+        core.pop("cache_expiry", None)
+    else:
+        if LT_VERSION == "2.0.15":
+            core["cache_size"] = blocks
+        else:
+            core.setdefault("cache_size", blocks)
+        core.setdefault("cache_expiry", 300)
+    replacements = {
+        "core.conf": (core, 1),
+        "web.conf": (web, 2),
+        "hostlist.conf": (hosts, 3),
+        "ltconfig.conf": (previous, 1),
+    }
+    # Every changed file is covered by the full-profile snapshot. Download
+    # content is untouched; the destination daemon converts its own session.
+    for name, (value, version) in replacements.items():
+        descriptor, temporary = tempfile.mkstemp(prefix=".upgrade-config-", dir=profile)
+        os.close(descriptor)
+        os.unlink(temporary)
+        try:
+            write(Path(temporary), value, file_version=version)
+            os.replace(temporary, profile / name)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    if not plugin.exists():
+        with os.fdopen(
+            os.open(
+                plugin, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
+            ),
+            "wb",
+        ) as stream:
+            stream.write(plugin_data)
+    if DELUGE_VERSION == "1.3.15":
+        descriptor, temporary = tempfile.mkstemp(prefix=".upgrade-auth-", dir=profile)
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(auth)
+        os.replace(temporary, profile / "auth")
+        (profile / "hostlist.conf.1.2").unlink()
+        old_plugin.unlink()
+    if removed_controls:
+        print(
+            f"Removed {len(removed_controls)} unsupported libtorrent controls; original settings remain in the upgrade snapshot"
+        )
+    if values["cache_blocks"] == "n/a" and target_lib == "1.2.20":
+        print(f"Enabled the requested libtorrent 1.2 cache: {target_cache_mib} MiB")
 
 
 def create(args, account, home, profile):
@@ -525,6 +903,10 @@ def main():
             "restore",
             "purge",
             "password",
+            "plan-upgrade",
+            "snapshot-upgrade",
+            "restore-upgrade",
+            "migrate-upgrade",
         ),
     )
     parser.add_argument("--web-port", type=int)
@@ -532,6 +914,9 @@ def main():
     parser.add_argument("--incoming-port", type=int)
     parser.add_argument("--cache-mib", type=int)
     parser.add_argument("--snapshot")
+    parser.add_argument("--target-deluge-version")
+    parser.add_argument("--target-libtorrent-version")
+    parser.add_argument("--target-cache-mib", type=int)
     parser.add_argument(
         "--deluge-version", choices=("1.3.15", "2.2.0"), default="1.3.15"
     )
@@ -567,6 +952,26 @@ def main():
         if not args.snapshot:
             raise ValueError("A settings snapshot is required")
         restore(profile, args.snapshot)
+    elif args.action == "plan-upgrade":
+        upgrade_values(
+            profile,
+            args.target_deluge_version,
+            args.target_libtorrent_version,
+            args.target_cache_mib,
+        )
+    elif args.action == "snapshot-upgrade":
+        snapshot_upgrade(profile)
+    elif args.action == "restore-upgrade":
+        if not args.snapshot:
+            raise ValueError("An upgrade snapshot is required")
+        restore_upgrade(profile, args.snapshot)
+    elif args.action == "migrate-upgrade":
+        migrate_upgrade(
+            profile,
+            args.target_deluge_version,
+            args.target_libtorrent_version,
+            args.target_cache_mib,
+        )
     else:
         purge(profile)
 
@@ -574,5 +979,13 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (OSError, ValueError, TypeError) as error:
+    except (
+        OSError,
+        ValueError,
+        TypeError,
+        AttributeError,
+        EOFError,
+        pickle.UnpicklingError,
+        subprocess.SubprocessError,
+    ) as error:
         sys.exit(str(error))
