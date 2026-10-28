@@ -54,7 +54,7 @@ Available qBittorrent/libtorrent pairs:
 
 BBR variants (`--bbr-algo`): `bbrv3`, `bbrx`, `bbrx_old`, `bbrw`, `bbr_brutal`, `bbrw_brutal`.
 
-The dedicated-server example includes `bbrw`; change `--bbr-algo` to select another variant. All variants use the SHA-256-verified bundled installer by default. DKMS variants support Debian 11–13 and Ubuntu 20.04/22.04/24.04/26.04 with kernel 5.4–7.1.x and matching headers. No BBRv3 package is configured for Ubuntu 20.04; availability elsewhere varies by OS/architecture. Custom installers require `--bbr-script-sha256` or explicit `--allow-unverified-bbr-installer`.
+The dedicated-server example includes `bbrw`; change `--bbr-algo` to select another variant. No BBRv3 package is configured for Ubuntu 20.04.
 
 ### Shared/rootless account
 
@@ -87,7 +87,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --deluge-libtorrent-version 2.0.15
 ```
 
-Omitting version options selects legacy **1.3.15 / 1.1.14**, supported on Debian 11+/Ubuntu 20.04+ with root and systemd; its unsupported-runtime warning is informational, not an installation gate. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).
+Omitting version options selects legacy **1.3.15 / 1.1.14**, supported on Debian 11+/Ubuntu 20.04+ with root and systemd. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).
 
 Open `http://SERVER_IP:8112` for WebUI access and restrict the port to trusted sources; daemon RPC stays on loopback. Deluge is not included in the default or rootless profiles. See the guide for [lifecycle commands](Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall).
 

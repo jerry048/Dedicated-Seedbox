@@ -20,13 +20,6 @@ Both `x86_64` (amd64) and `ARM64` (aarch64) use the same version matrix:
 | **5.2.4**                         | **1.2.20, 2.0.15**                    |
 | **5.3.0**                         | **1.2.20, 2.1.2**                     |
 
-Static builds made with the pinned inputs below use Docker Desktop's Linux engine,
-userdocs' static-build script and the Jerry048 patches. Their disk-queue default
-is **250 MiB**; request-queue ceilings remain **10,000 blocks per peer**.
-Build-only alignment patches prevent older qBittorrent defaults from replacing
-the patched libtorrent disk queue, socket backlog, connection limit and port-mapping
-defaults. Explicit settings in existing profiles still take precedence.
-
 ### Build inputs
 
 - Builder: [`userdocs/qbittorrent-nox-static@546b0b6`](https://github.com/userdocs/qbittorrent-nox-static/commit/546b0b60d613dec875f34fc190a1123ca799783b).

@@ -56,9 +56,7 @@ sudo seedboxctl deluge uninstall --user delugeuser
 - **Uninstall** removes services but keeps configuration, downloads, torrent/session data and the shared runtime.
 - Add **`--purge --yes`** only to deliberately remove active settings: `core.conf`, `web.conf`, `hostlist.conf.1.2` or `hostlist.conf`, `auth` and `ltconfig.conf`. Downloads, torrent/session metadata, plugins and recovery snapshots remain.
 
-Automatic downgrade to **1.3.15** is not supported. Disable third-party plugins before switching versions. Unsupported libtorrent controls are removed from active settings but retained in the snapshot. Switching from 2.0.15 to 1.2.20 prompts for a cache size in MiB, with **no default**, before building or stopping services. For non-interactive runs, supply `--deluge-cache-mib N` (alias: `--cache-mib N`); upgrade cache options apply only to this switch. Legacy automatic folder watching needs reconfiguration with Deluge 2's AutoAdd plugin. Back up important data before upgrading.
-
-Upgrades preserve existing WebUI binding. For an old loopback-only profile, stop both services and back up `web.conf` before changing `interface` to `"0.0.0.0"`; preserve its version header, then run `upgrade`. Leave `"127.0.0.1"` to keep local-only access.
+Automatic downgrade to **1.3.15** is not supported. Disable third-party plugins before switching versions. Legacy automatic folder watching needs reconfiguration with Deluge 2's AutoAdd plugin. Back up important data before upgrading.
 
 ## Paths and runtime reuse
 

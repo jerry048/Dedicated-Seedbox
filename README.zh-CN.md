@@ -56,7 +56,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 
 BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_brutal`、`bbrw_brutal`。
 
-独享服务器示例已包含 `bbrw`；修改 `--bbr-algo` 可选择其他变体。所有变体默认使用经 SHA-256 校验的随附安装器。DKMS 变体支持 Debian 11–13 和 Ubuntu 20.04/22.04/24.04/26.04，需内核 5.4–7.1.x 及匹配的头文件。未配置 Ubuntu 20.04 的 BBRv3 软件包；其他系统的可用性取决于系统和架构。自定义安装器需提供 `--bbr-script-sha256`，或明确指定 `--allow-unverified-bbr-installer`。
+独享服务器示例已包含 `bbrw`；修改 `--bbr-algo` 可选择其他变体。未配置 Ubuntu 20.04 的 BBRv3 软件包。
 
 ### 共享/rootless 账号
 
@@ -89,7 +89,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --deluge-libtorrent-version 2.0.15
 ```
 
-省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd；会提示运行环境已停止维护，但不以此阻止安装。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
+省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
 
 通过 `http://SERVER_IP:8112` 访问 WebUI，并将端口限制在可信来源；守护进程 RPC 仍仅监听回环地址。默认和 rootless 配置不包含 Deluge。[升级、卸载命令](Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)见详细指南。
 
