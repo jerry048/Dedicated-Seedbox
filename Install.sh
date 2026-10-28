@@ -68,6 +68,7 @@ usage() {
   --password PASSWORD        WebUI 密码；建议使用 stdin 或密码文件
   --password-stdin           从标准输入读取客户端 WebUI 密码
   --password-file FILE       从私有文件读取密码
+                             密码输入方式只能选一种；stdin 方式需管道或文件重定向
   --source SOURCE            distro|static|existing
   --qb-tuning-profile PROFILE  qBittorrent 配置调优：auto、legacy、1g-hdd、over1g-nvme 等
   --qb-version VERSION       静态 qBittorrent 版本
@@ -182,6 +183,7 @@ Long options:
   --password PASSWORD        WebUI password; prefer stdin or a password file
   --password-stdin           Read client WebUI password from stdin
   --password-file FILE       Read password from a private file
+                             Choose one password input method; stdin needs a pipe or file redirection
   --source SOURCE            distro|static|existing
   --qb-tuning-profile PROFILE qBittorrent config tuning: auto, legacy, 1g-hdd, over1g-nvme, etc.
   --qb-version VERSION       Static qBittorrent version
@@ -850,7 +852,10 @@ handle_short_option_with_value() {
   local opt="$1" value="$2"
   case "${opt}" in
     u) username="${value}" ;;
-    p) password="${value}" ;;
+    p)
+      password="${value}"
+      password_set=1
+      ;;
     c)
       cache="${value}"
       cache_explicit=1
@@ -871,6 +876,7 @@ main() {
   local upgrade_system=0 no_clear=0 rootless=0 service_mode="" webui_username="" profile="" root_only_requested=0
   local storage_path="" storage="" interface="" link_speed="" link_speed_mbps="" disk_scheduler_all=0
   local password_file=''
+  local password_set=0 password_file_set=0
   local cache_explicit=0 generic_cache_mib=''
   local -a deluge_args=()
 
@@ -904,10 +910,12 @@ main() {
       -p | --password)
         require_value "$1" "${2:-}"
         password="$2"
+        password_set=1
         shift 2
         ;;
       --password=*)
         password="${1#*=}"
+        password_set=1
         shift
         ;;
       -c | --cache)
@@ -945,6 +953,7 @@ main() {
         ;;
       -p?*)
         password="${1#-p}"
+        password_set=1
         shift
         ;;
       -c?*)
@@ -1090,10 +1099,12 @@ main() {
       --password-file)
         require_value "$1" "${2:-}"
         password_file="$2"
+        password_file_set=1
         shift 2
         ;;
       --password-file=*)
         password_file="${1#*=}"
+        password_file_set=1
         shift
         ;;
       --deluge-version)
@@ -1349,6 +1360,19 @@ main() {
       *) die "$(tr_msg "无法识别选项：$1" "Unknown option: $1")" ;;
     esac
   done
+
+  if ((password_set + password_file_set + password_stdin > 1)); then
+    die "$(tr_msg '密码输入方式冲突：--password、--password-file 和 --password-stdin 只能选一种。' 'Conflicting password inputs: choose only one of --password, --password-file, or --password-stdin.')"
+  fi
+  if ((password_set)) && [[ -z "${password}" ]]; then
+    die "$(tr_msg '密码不能为空。' 'Password must not be empty.')"
+  fi
+  if ((password_file_set)) && [[ -z "${password_file}" ]]; then
+    die "$(tr_msg '密码文件路径不能为空。' 'Password file path must not be empty.')"
+  fi
+  if ((password_stdin)) && [[ -t 0 ]]; then
+    die "$(tr_msg '--password-stdin 需要管道或文件重定向，不能直接从终端读取；也可改用 --password-file。' '--password-stdin requires a pipe or file redirection, not a terminal; alternatively use --password-file.')"
+  fi
 
   if [[ -n "${lib_version}" ]]; then
     if ((components_overridden)) && csv_contains "${components}" deluge && ! csv_contains "${components}" qbittorrent; then

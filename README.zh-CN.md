@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.2
+# Dedicated-Seedbox V2.1.3
 
 [English](README.md) · [详细参考](docs/reference.zh-CN.md)
 
@@ -13,6 +13,8 @@
 ## 快速开始
 
 先创建私有密码文件，再替换示例中的 `/path/to/password.txt` 和 `jerry048`。限制密码文件仅所有者可访问（`chmod 600 /path/to/password.txt`）。以 root 执行远程脚本前，请先审查其内容。
+
+`--password`、`--password-file` 和 `--password-stdin` 只能选一种。使用 `--password-stdin` 时，须按下方示例通过管道或文件重定向传入密码；不接受直接从终端输入。
 
 ### 独享服务器或 VPS
 

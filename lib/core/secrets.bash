@@ -43,6 +43,7 @@ secrets::write_password_cache() {
 }
 
 secrets::read_password_from_args() {
+  args::validate_password_input || return $?
   local prompt="${1:-$(ui::tr "WebUI 密码" "WebUI password")}"
   local password="" cache="${SEEDBOX_PASSWORD_STDIN_CACHE:-}"
   if args::has password_stdin; then

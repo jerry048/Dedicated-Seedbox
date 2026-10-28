@@ -2,7 +2,7 @@
 
 [Main guide](../README.md) · [简体中文](reference.zh-CN.md)
 
-Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.2. Start with the [main guide](../README.md) for routine work.
+Command options, component setup, tuning values, paths, and recovery behavior for Dedicated-Seedbox V2.1.3. Start with the [main guide](../README.md) for routine work.
 
 ---
 
@@ -80,6 +80,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 ```
 
 Run the dedicated example as root and the rootless example without root or sudo. Create a private password file first and replace the example path.
+
+`--password`, `--password-file`, and `--password-stdin` are mutually exclusive. `--password-stdin` requires a pipe or file redirection, not a terminal. Invalid combinations fail before installation starts.
 
 #### Legacy wrapper aliases
 

@@ -119,6 +119,32 @@ args::parse_for() {
     ui::error "Unexpected arguments: $(args::format_positionals)"
     return 2
   fi
+  args::has help || args::validate_password_input || return $?
+  return 0
+}
+
+args::validate_password_input() {
+  local count=0 key
+  for key in password password_file password_stdin; do
+    if args::has "${key}"; then count=$((count + 1)); fi
+  done
+  if ((count > 1)); then
+    ui::error "$(ui::tr '密码输入方式冲突：--password、--password-file 和 --password-stdin 只能选一种。' 'Conflicting password inputs: choose only one of --password, --password-file, or --password-stdin.')"
+    return 2
+  fi
+  if args::has password && [[ -z "$(args::get password)" ]]; then
+    ui::error "$(ui::tr '密码不能为空。' 'Password must not be empty.')"
+    return 2
+  fi
+  if args::has password_file && [[ -z "$(args::get password_file)" ]]; then
+    ui::error "$(ui::tr '密码文件路径不能为空。' 'Password file path must not be empty.')"
+    return 2
+  fi
+  if args::has password_stdin && [[ -t 0 ]]; then
+    ui::error "$(ui::tr '--password-stdin 需要管道或文件重定向，不能直接从终端读取；也可改用 --password-file。' '--password-stdin requires a pipe or file redirection, not a terminal; alternatively use --password-file.')"
+    return 2
+  fi
+  return 0
 }
 
 args::parse() {

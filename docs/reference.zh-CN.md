@@ -2,7 +2,7 @@
 
 [主指南](../README.zh-CN.md) · [English](reference.md)
 
-Dedicated-Seedbox V2.1.2 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
+Dedicated-Seedbox V2.1.3 的命令选项、组件安装、调优数值、路径及恢复行为。日常操作请先阅读[主指南](../README.zh-CN.md)。
 
 ---
 
@@ -84,6 +84,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 ```
 
 独享示例以 root 运行；共享示例不要使用 root 或 sudo。请先创建私有密码文件并替换示例路径。
+
+`--password`、`--password-file` 和 `--password-stdin` 互斥。`--password-stdin` 必须通过管道或文件重定向读取，不能直接从终端读取。无效组合会在安装开始前报错。
 
 #### 旧版包装器别名
 

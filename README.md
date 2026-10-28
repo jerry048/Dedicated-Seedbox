@@ -1,4 +1,4 @@
-# Dedicated-Seedbox V2.1.2
+# Dedicated-Seedbox V2.1.3
 
 [简体中文](README.zh-CN.md) · [Advanced reference](docs/reference.md)
 
@@ -11,6 +11,8 @@ Install and manage a Debian/Ubuntu seedbox with `seedboxctl`. Supports Debian 11
 ## Quick start
 
 Create a private password file first, then replace `/path/to/password.txt` and `jerry048` in the examples. Restrict the file to its owner (`chmod 600 /path/to/password.txt`). Review remote scripts before running them as root.
+
+Choose only one password input method: `--password`, `--password-file`, or `--password-stdin`. With `--password-stdin`, use a pipe or file redirection as shown below; terminal input is rejected.
 
 ### Dedicated server or VPS
 

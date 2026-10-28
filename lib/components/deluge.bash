@@ -142,6 +142,7 @@ deluge::require_platform() (
 )
 
 deluge::prepare_password() {
+  args::validate_password_input || return $?
   local cache="${SEEDBOX_PASSWORD_STDIN_CACHE:-}" file password
   DE_PASSWORD_FILE="$(mktemp /run/seedbox-deluge-password.XXXXXX)" || return $?
   secrets::track_file "${DE_PASSWORD_FILE}" || return $?
