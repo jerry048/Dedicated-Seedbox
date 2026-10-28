@@ -10,23 +10,23 @@ Install and manage a Debian/Ubuntu seedbox with `seedboxctl`. Supports Debian 11
 
 ## Quick start
 
-Create a private password file first, then replace `/path/to/password.txt` and `jerry048` in the examples. Restrict the file to its owner (`chmod 600 /path/to/password.txt`). Review remote scripts before running them as root.
+Replace `REPLACE_WITH_A_STRONG_PASSWORD` and the example usernames with your own values. Command-line passwords may appear in shell history and process listings; prefer `--password-file FILE` with a private file (`chmod 600 FILE`) when needed.
 
-Choose only one password input method: `--password`, `--password-file`, or `--password-stdin`. With `--password-stdin`, use a pipe or file redirection as shown below; terminal input is rejected.
+Choose only one password input method: `--password`, `--password-file`, or `--password-stdin`. With `--password-stdin`, use a pipe or file redirection; terminal input is rejected.
 
 ### Dedicated server or VPS
 
-Run as root on a host/full VM you control. This installs **qBittorrent 5.3.0 + libtorrent 2.1.2** and host tuning:
+Run as root on a host/full VM you control. This installs **qBittorrent 5.3.0 + libtorrent 2.1.2**, host tuning, and **BBRw**:
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
   --user jerry048 \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
   --qb-version 5.3.0 \
   --libtorrent-version v2.1.2 \
-  --components qbittorrent,tuning \
-  < /path/to/password.txt
+  --components qbittorrent,tuning,bbr \
+  --bbr-algo bbrw
 ```
 
 Main options (full list in the [CLI overview](docs/reference.md#cli-overview)):
@@ -34,6 +34,7 @@ Main options (full list in the [CLI overview](docs/reference.md#cli-overview)):
 | Option                                                 | Description                                                                                       |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
 | `--user USER`                                          | Linux account that owns the instance.                                                             |
+| `--password PASSWORD`                                  | WebUI password; quote the value as shown above.                                                   |
 | `--password-stdin`, `--password-file FILE`             | Preferred password input.                                                                         |
 | `--components COMPONENT[,COMPONENT...]`                | Default `qbittorrent,tuning`; add `deluge`, `autobrr`, `vertex`, `autoremove-torrents`, or `bbr`. |
 | `--qb-version VERSION`, `--libtorrent-version VERSION` | Static pair from the manifest (see below).                                                        |
@@ -53,7 +54,7 @@ Available qBittorrent/libtorrent pairs:
 
 BBR variants (`--bbr-algo`): `bbrv3`, `bbrx`, `bbrx_old`, `bbrw`, `bbr_brutal`, `bbrw_brutal`.
 
-Add `--bbr-algo bbrx` to the dedicated-server command to include BBR. All variants use the SHA-256-verified bundled installer by default. DKMS variants support Debian 11–13 and Ubuntu 20.04/22.04/24.04/26.04 with kernel 5.4–7.1.x and matching headers. No BBRv3 package is configured for Ubuntu 20.04; availability elsewhere varies by OS/architecture. Custom installers require `--bbr-script-sha256` or explicit `--allow-unverified-bbr-installer`.
+The dedicated-server example includes `bbrw`; change `--bbr-algo` to select another variant. All variants use the SHA-256-verified bundled installer by default. DKMS variants support Debian 11–13 and Ubuntu 20.04/22.04/24.04/26.04 with kernel 5.4–7.1.x and matching headers. No BBRv3 package is configured for Ubuntu 20.04; availability elsewhere varies by OS/architecture. Custom installers require `--bbr-script-sha256` or explicit `--allow-unverified-bbr-installer`.
 
 ### Shared/rootless account
 
@@ -63,11 +64,10 @@ Run as the intended Unix user, **without root or sudo**. This installs qBittorre
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
   --rootless \
   --webui-username jerry048 \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
   --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
-  < /path/to/password.txt
+  --libtorrent-version v2.1.2
 ```
 
 Use the WebUI URL printed by the installer; its default port is **8080**. Keep WebUI access restricted to trusted networks and review its security settings before exposing it publicly. After installation, use `seedboxctl` (or `~/.local/bin/seedboxctl` for rootless accounts).
@@ -82,10 +82,9 @@ Deluge **2.2.0** supports patched libtorrent **1.2.20** or **2.0.15**. Debian 12
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
   --components deluge \
   --user delugeuser \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
-  < /path/to/password.txt
+  --deluge-libtorrent-version 2.0.15
 ```
 
 Omitting version options selects legacy **1.3.15 / 1.1.14**, supported on Debian 11+/Ubuntu 20.04+ with root and systemd; its unsupported-runtime warning is informational, not an installation gate. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).

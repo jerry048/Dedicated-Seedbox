@@ -12,23 +12,23 @@
 
 ## 快速开始
 
-先创建私有密码文件，再替换示例中的 `/path/to/password.txt` 和 `jerry048`。限制密码文件仅所有者可访问（`chmod 600 /path/to/password.txt`）。以 root 执行远程脚本前，请先审查其内容。
+请将 `REPLACE_WITH_A_STRONG_PASSWORD` 和示例用户名替换为自己的值。命令行密码可能出现在 shell 历史记录和进程列表中；有保密需求时，建议使用 `--password-file FILE` 和私有密码文件（`chmod 600 FILE`）。
 
-`--password`、`--password-file` 和 `--password-stdin` 只能选一种。使用 `--password-stdin` 时，须按下方示例通过管道或文件重定向传入密码；不接受直接从终端输入。
+`--password`、`--password-file` 和 `--password-stdin` 只能选一种。使用 `--password-stdin` 时，须通过管道或文件重定向传入密码；不接受直接从终端输入。
 
 ### 独享服务器或 VPS
 
-在自己控制的主机/完整虚拟机上以 root 运行。安装 **qBittorrent 5.3.0 + libtorrent 2.1.2** 及系统调优：
+在自己控制的主机/完整虚拟机上以 root 运行。安装 **qBittorrent 5.3.0 + libtorrent 2.1.2**、系统调优及 **BBRw**：
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN \
   --user jerry048 \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
   --qb-version 5.3.0 \
   --libtorrent-version v2.1.2 \
-  --components qbittorrent,tuning \
-  < /path/to/password.txt
+  --components qbittorrent,tuning,bbr \
+  --bbr-algo bbrw
 ```
 
 主要选项（完整列表见 [CLI 概览](docs/reference.zh-CN.md#cli-overview)）：
@@ -36,6 +36,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 | 选项                                                   | 说明                                                                                              |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
 | `--user USER`                                          | 拥有实例的 Linux 账号。                                                                           |
+| `--password PASSWORD`                                  | WebUI 密码；请按上方示例为值加引号。                                                              |
 | `--password-stdin`、`--password-file FILE`             | 推荐的密码输入方式。                                                                              |
 | `--components COMPONENT[,COMPONENT...]`                | 默认 `qbittorrent,tuning`；可加入 `deluge`、`autobrr`、`vertex`、`autoremove-torrents` 或 `bbr`。 |
 | `--qb-version VERSION`、`--libtorrent-version VERSION` | 清单中的静态组合（见下表）。                                                                      |
@@ -55,7 +56,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 
 BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_brutal`、`bbrw_brutal`。
 
-在独享服务器命令中加入 `--bbr-algo bbrx` 即可同时安装 BBR。所有变体默认使用经 SHA-256 校验的随附安装器。DKMS 变体支持 Debian 11–13 和 Ubuntu 20.04/22.04/24.04/26.04，需内核 5.4–7.1.x 及匹配的头文件。未配置 Ubuntu 20.04 的 BBRv3 软件包；其他系统的可用性取决于系统和架构。自定义安装器需提供 `--bbr-script-sha256`，或明确指定 `--allow-unverified-bbr-installer`。
+独享服务器示例已包含 `bbrw`；修改 `--bbr-algo` 可选择其他变体。所有变体默认使用经 SHA-256 校验的随附安装器。DKMS 变体支持 Debian 11–13 和 Ubuntu 20.04/22.04/24.04/26.04，需内核 5.4–7.1.x 及匹配的头文件。未配置 Ubuntu 20.04 的 BBRv3 软件包；其他系统的可用性取决于系统和架构。自定义安装器需提供 `--bbr-script-sha256`，或明确指定 `--allow-unverified-bbr-installer`。
 
 ### 共享/rootless 账号
 
@@ -65,11 +66,10 @@ BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_bru
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN \
   --rootless \
   --webui-username jerry048 \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
   --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
-  < /path/to/password.txt
+  --libtorrent-version v2.1.2
 ```
 
 使用安装器显示的 WebUI 地址，默认端口为 **8080**。请限制 WebUI 仅受信任网络可访问，在公开暴露前审查安全设置。安装后使用 `seedboxctl`；rootless 账号也可直接运行 `~/.local/bin/seedboxctl`。
@@ -84,10 +84,9 @@ Deluge **2.2.0** 支持带调优补丁的 libtorrent **1.2.20** 或 **2.0.15**�
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN \
   --components deluge \
   --user delugeuser \
-  --password-stdin \
+  --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
-  < /path/to/password.txt
+  --deluge-libtorrent-version 2.0.15
 ```
 
 省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd；会提示运行环境已停止维护，但不以此阻止安装。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。
