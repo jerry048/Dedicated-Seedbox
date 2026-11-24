@@ -78,7 +78,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 
 ### 可选 Deluge
 
-Deluge **2.2.0** 支持带调优补丁的 libtorrent **1.2.20** 或 **2.0.15**。需要 Debian 12+/Ubuntu 22.04+、root 和 systemd。下方显式选择 Deluge，不安装 qBittorrent：
+Deluge **2.2.0** 支持带调优补丁的 libtorrent **1.2.20** 或 **2.0.16**。需要 Debian 12+/Ubuntu 22.04+、root 和 systemd。下方显式选择 Deluge，不安装 qBittorrent：
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN \
@@ -86,7 +86,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --user delugeuser \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15
+  --deluge-libtorrent-version 2.0.16
 ```
 
 省略版本参数选择旧版 **1.3.15 / 1.1.14**，支持 Debian 11+/Ubuntu 20.04+，需要 root 和 systemd。libtorrent 2.x 不接受磁盘缓存参数，详见[版本、安全提示及私有运行环境指南](Torrent%20Clients/Deluge/README.zh-CN.md)。

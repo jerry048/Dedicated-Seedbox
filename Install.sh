@@ -87,7 +87,7 @@ usage() {
   --vertex-port PORT
   --components COMPONENT[,COMPONENT...]
   --deluge-version VERSION   1.3.15（默认）|2.2.0
-  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14；2.2.0: 1.2.20|2.0.15（默认）
+  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14；2.2.0: 1.2.20|2.0.16（默认）
   --deluge-web-port PORT
   --deluge-rpc-port PORT
   --deluge-incoming-port PORT
@@ -202,7 +202,7 @@ Long options:
   --vertex-port PORT
   --components COMPONENT[,COMPONENT...]
   --deluge-version VERSION   1.3.15 (default)|2.2.0
-  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14; 2.2.0: 1.2.20|2.0.15 (default)
+  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14; 2.2.0: 1.2.20|2.0.16 (default)
   --deluge-web-port PORT
   --deluge-rpc-port PORT
   --deluge-incoming-port PORT
@@ -415,7 +415,7 @@ lib/components/deluge/check-instance.py
 lib/components/deluge/deluge-2.2.0-crypto.patch
 lib/components/deluge/libtorrent-1.1.14.patch
 lib/components/deluge/libtorrent-1.2.20.patch
-lib/components/deluge/libtorrent-2.0.15.patch
+lib/components/deluge/libtorrent-2.0.16.patch
 lib/components/deluge/patches.lock
 lib/components/deluge/patches-2.2.0.lock
 lib/components/deluge/rpc-check.py

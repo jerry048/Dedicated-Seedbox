@@ -76,7 +76,7 @@ Already installed? Use **upgrade**, not a fresh install over an existing config.
 
 ### Optional Deluge
 
-Deluge **2.2.0** supports patched libtorrent **1.2.20** or **2.0.15**. Debian 12+/Ubuntu 22.04+, root and systemd are required. This selects Deluge instead of qBittorrent:
+Deluge **2.2.0** supports patched libtorrent **1.2.20** or **2.0.16**. Debian 12+/Ubuntu 22.04+, root and systemd are required. This selects Deluge instead of qBittorrent:
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
@@ -84,7 +84,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --user delugeuser \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15
+  --deluge-libtorrent-version 2.0.16
 ```
 
 Omitting version options selects legacy **1.3.15 / 1.1.14**, supported on Debian 11+/Ubuntu 20.04+ with root and systemd. libtorrent 2.x rejects disk-cache options. See the [version, security and private-runtime guide](Torrent%20Clients/Deluge/README.md).

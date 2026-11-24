@@ -15,7 +15,7 @@ deluge::usage() {
 
 安装选项：
   --deluge-version VERSION      1.3.15（默认）|2.2.0
-  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14；2.2.0: 1.2.20|2.0.15（默认）
+  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14；2.2.0: 1.2.20|2.0.16（默认）
   --deluge-web-port PORT       默认 8112（也可用 --web-port）
   --deluge-rpc-port PORT       默认 58846（也可用 --rpc-port）
   --deluge-incoming-port PORT  默认 45000（也可用 --incoming-port）
@@ -30,8 +30,8 @@ deluge::usage() {
 Deluge 1.3.15、Python 2 和旧版 TLS 已停止维护，使用前请阅读安全提示。
 2.2.0 使用独立 Python 3 和版本组合专用运行环境；libtorrent 2.x 不支持旧版磁盘缓存参数。
 新配置的 WebUI 可通过服务器 IP 访问；RPC 仅监听回环地址。请限制 WebUI 的访问来源。
-upgrade 默认保留版本组合；可显式升级到 2.2.0 或切换其 libtorrent 版本，并备份配置和会话。
-从 2.0.15 切换至 1.2.20 时须输入缓存 MiB；非交互运行请指定 --deluge-cache-mib N（也可用 --cache-mib）。
+upgrade 默认保留版本组合；现有 2.0.15 运行环境默认升级到 2.0.16。可显式升级到 2.2.0 或切换其 libtorrent 版本，并备份配置和会话。
+从 libtorrent 2.x 切换至 1.2.20 时须输入缓存 MiB；非交互运行请指定 --deluge-cache-mib N（也可用 --cache-mib）。
 不支持自动降级至 1.3.15；切换版本前须禁用第三方插件。卸载保留下载和会话数据；
 --purge 仅删除五个活动设置文件，保留插件、恢复快照和下载。
 USAGE
@@ -47,7 +47,7 @@ Usage:
 
 Install options:
   --deluge-version VERSION      1.3.15 (default)|2.2.0
-  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14; 2.2.0: 1.2.20|2.0.15 (default)
+  --deluge-libtorrent-version VERSION  1.3.15: 1.1.14; 2.2.0: 1.2.20|2.0.16 (default)
   --deluge-web-port PORT       Default 8112 (alias: --web-port)
   --deluge-rpc-port PORT       Default 58846 (alias: --rpc-port)
   --deluge-incoming-port PORT  Default 45000 (alias: --incoming-port)
@@ -62,8 +62,8 @@ Requires root and systemd; 1.3.15 supports Debian 11+/Ubuntu 20.04+, while 2.2.0
 Deluge 1.3.15, Python 2 and legacy TLS are unsupported; review the security guidance.
 2.2.0 uses private Python 3 and pair-specific runtimes; libtorrent 2.x has no legacy disk cache option.
 New profiles allow WebUI access through the server IP; RPC remains loopback-only. Restrict WebUI access to trusted sources.
-Upgrade keeps the pair by default; explicitly select 2.2.0 or its other libtorrent version to migrate with profile/session backups.
-Switching from 2.0.15 to 1.2.20 prompts for cache MiB; non-interactive runs need --deluge-cache-mib N (alias: --cache-mib).
+Upgrade keeps the pair by default; existing 2.0.15 runtimes move to 2.0.16. Explicitly select 2.2.0 or its other libtorrent version to migrate with profile/session backups.
+Switching from libtorrent 2.x to 1.2.20 prompts for cache MiB; non-interactive runs need --deluge-cache-mib N (alias: --cache-mib).
 Automatic downgrade to 1.3.15 is unsupported; disable third-party plugins before switching. Uninstall keeps data;
 --purge removes only five active settings files, not plugins, snapshots or downloads.
 USAGE
@@ -89,7 +89,7 @@ deluge::set_runtime() {
       DE_PREFIX=/opt/deluge-1.3.15
       DE_PYTHON="${DE_PREFIX}/bin/python2.7"
       ;;
-    2.2.0:1.2.20 | 2.2.0:2.0.15)
+    2.2.0:1.2.20 | 2.2.0:2.0.15 | 2.2.0:2.0.16)
       DE_PREFIX="/opt/deluge-2.2.0-lt-${DE_LT_VERSION}"
       DE_PYTHON="${DE_PREFIX}/bin/python3"
       ;;
@@ -108,7 +108,7 @@ deluge::select_runtime() {
     [[ -z "${lib}" || "${lib#v}" == "${ARGS[libtorrent_version]#v}" ]] || return 2
     lib="${lib:-$(args::get libtorrent_version)}"
   fi
-  [[ -n "${lib}" ]] || { if [[ "${version#v}" == 1.3.15 ]]; then lib=1.1.14; else lib=2.0.15; fi; }
+  [[ -n "${lib}" ]] || { if [[ "${version#v}" == 1.3.15 ]]; then lib=1.1.14; else lib=2.0.16; fi; }
   deluge::set_runtime "${version#v}" "${lib#v}"
 }
 
@@ -226,7 +226,7 @@ deluge::load_install_args() {
   done
   [[ "${DE_WEB_PORT}" != "${DE_RPC_PORT}" && "${DE_WEB_PORT}" != "${DE_INCOMING_PORT}" && "${DE_RPC_PORT}" != "${DE_INCOMING_PORT}" ]] || return 2
   [[ "${DE_CACHE_MIB}" =~ ^[1-9][0-9]{0,6}$ ]] && ((DE_CACHE_MIB <= 1048576)) || return 2
-  if [[ "${DE_LT_VERSION}" == 2.0.15 ]] && args::has deluge_cache_mib; then
+  if [[ "${DE_LT_VERSION}" == 2.0.* ]] && args::has deluge_cache_mib; then
     ui::error "$(ui::tr 'libtorrent 2.x 不使用旧版磁盘缓存；请去掉 --deluge-cache-mib/--cache-mib。' 'libtorrent 2.x does not use the legacy disk cache; omit --deluge-cache-mib/--cache-mib.')"
     return 2
   fi
@@ -343,14 +343,22 @@ deluge::select_upgrade_target() {
   if args::has deluge_libtorrent_version || args::has libtorrent_version; then
     lib="$(args::get deluge_libtorrent_version "$(args::get libtorrent_version)")"
   elif [[ "${version#v}" == "${DE_VERSION}" ]]; then
-    lib="${DE_LT_VERSION}"
+    if [[ "${DE_LT_VERSION}" == 2.0.15 ]]; then
+      lib=2.0.16
+    else
+      lib="${DE_LT_VERSION}"
+    fi
   elif [[ "${version#v}" == 2.2.0 ]]; then
-    lib=2.0.15
+    lib=2.0.16
   else
     lib=1.1.14
   fi
   if [[ "${DE_VERSION}" == 2.2.0 && "${version#v}" == 1.3.15 ]]; then
     ui::error "$(ui::tr '不支持自动降级至 Deluge 1.3.15；请保留备份并手动迁移。' 'Automatic downgrade to Deluge 1.3.15 is unsupported; retain backups and migrate manually.')"
+    return 2
+  fi
+  if [[ "${version#v}" == 2.2.0 && "${lib#v}" == 2.0.15 ]]; then
+    ui::error "$(ui::tr 'libtorrent 2.0.15 已不再构建；请使用 2.0.16。' 'libtorrent 2.0.15 is no longer a build target; use 2.0.16.')"
     return 2
   fi
   deluge::set_runtime "${version#v}" "${lib#v}"
@@ -381,9 +389,9 @@ deluge::select_upgrade_cache() {
     supplied=1
     value="$(args::get deluge_cache_mib "$(args::get cache_mib)")"
   fi
-  if [[ "${DE_LT_VERSION}" != 2.0.15 || "${target_lib}" != 1.2.20 ]]; then
+  if [[ "${DE_LT_VERSION}" != 2.0.* || "${target_lib}" != 1.2.20 ]]; then
     if ((supplied)); then
-      ui::error "$(ui::tr '升级缓存参数仅用于从 libtorrent 2.0.15 切换至 1.2.20；其他升级保留已有缓存设置。' 'Upgrade cache options are only for switching from libtorrent 2.0.15 to 1.2.20; other upgrades keep existing cache settings.')"
+      ui::error "$(ui::tr '升级缓存参数仅用于从 libtorrent 2.0.16 切换至 1.2.20；其他升级保留已有缓存设置。' 'Upgrade cache options are only for switching from libtorrent 2.x to 1.2.20; other upgrades keep existing cache settings.')"
       return 2
     fi
     return 0
@@ -610,7 +618,7 @@ deluge::install_steps() {
   runner::must deluge.user "Create/verify user paths" "" deluge::ensure_user || return $?
   deluge::check_units || return $?
   runner::must deluge.config "$(ui::tr '创建 Deluge 配置' 'Create Deluge configuration')" "" deluge::write_config || return $?
-  if [[ "${DE_LT_VERSION}" == 2.0.15 ]]; then DE_CACHE_MIB=n/a; fi
+  if [[ "${DE_LT_VERSION}" == 2.0.* ]]; then DE_CACHE_MIB=n/a; fi
   runner::must deluge.units "$(ui::tr '写入 Deluge 服务' 'Write Deluge services')" "${DE_UNIT}" deluge::write_services || return $?
   # Retain an identity record even if readiness fails, so uninstall is possible.
   runner::must deluge.state "Save instance state" "" deluge::write_state || return $?

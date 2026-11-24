@@ -3,7 +3,7 @@ bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599 Python-3.11.17.
 6478edfe2f3305127cffe8caf73ea0176c53769f4bf1585be237eb30798c3b8e boost_1_83_0.tar.bz2 https://archives.boost.io/release/1.83.0/source/boost_1_83_0.tar.bz2
 c286427e0077c84b83b0ba88b964067e247c905eb1b94c0e982d382fa6f3ae09 ltConfig-2.0.0.egg https://github.com/ratanakvlun/deluge-ltconfig/releases/download/v2.0.0/ltConfig-2.0.0.egg
 ccbf8e8c21dc81635de95166b498922b4725f9725a23b2cfe2a6b2fead6fb9fc libtorrent-rasterbar-1.2.20.tar.gz https://github.com/arvidn/libtorrent/releases/download/v1.2.20/libtorrent-rasterbar-1.2.20.tar.gz
-5e2e79129823b7ea48721164c32b5aaf83d3fd733b5502100f6705b29f27bb02 libtorrent-rasterbar-2.0.15.tar.gz https://github.com/arvidn/libtorrent/releases/download/v2.0.15/libtorrent-rasterbar-2.0.15.tar.gz
+8463b8d786141c3923dbf54ab34e5c3312af9913b591239cb0e30f66ead34b9b libtorrent-rasterbar-2.0.16.tar.gz https://github.com/arvidn/libtorrent/releases/download/v2.0.16/libtorrent-rasterbar-2.0.16.tar.gz
 c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 attrs-26.1.0-py3-none-any.whl https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl
 04e9bce696a8d5671ee698005af6e5a9fa15354140a87f4870744604dcdd3ba1 automat-25.4.16-py3-none-any.whl https://files.pythonhosted.org/packages/02/ff/1175b0b7371e46244032d43a56862d0af455823b5280a50c63d99cc50f18/automat-25.4.16-py3-none-any.whl
 3fd9b4d1c3dc1ec9757f3c52aef7e53ad9323dbe39f51dfd4c43853b68dfa3f9 constantly-23.10.4-py3-none-any.whl https://files.pythonhosted.org/packages/b8/40/c199d095151addf69efdb4b9ca3a4f20f70e20508d6222bffb9b76f58573/constantly-23.10.4-py3-none-any.whl

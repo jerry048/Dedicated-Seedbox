@@ -8,7 +8,7 @@ Deluge is optional and requires **root and systemd**; rootless installation is n
 | ---------------- | ---------------------- | ------------------------ | ----------------------------- |
 | 1.3.15 (default) | 1.1.14                 | Debian 11 / Ubuntu 20.04 | `/opt/deluge-1.3.15`          |
 | 2.2.0            | 1.2.20                 | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-1.2.20` |
-| 2.2.0            | 2.0.15 (2.2.0 default) | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-2.0.15` |
+| 2.2.0            | 2.0.16 (2.2.0 default) | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-2.0.16` |
 
 **Legacy warning:** Deluge 1.3.15 and its Python 2.7/OpenSSL 1.1.1 stack are unsupported. Use them only when required; private installation and pinned downloads do not make them secure or maintained.
 
@@ -21,7 +21,7 @@ sudo bash bin/seedboxctl deluge add-user \
   --user delugeuser \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
+  --deluge-libtorrent-version 2.0.16 \
   --jobs 2
 ```
 
@@ -47,11 +47,11 @@ The installer does not open firewall ports. Restrict WebUI to trusted clients; f
 
 ```bash
 sudo seedboxctl deluge upgrade --user delugeuser
-sudo seedboxctl deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
+sudo seedboxctl deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.16
 sudo seedboxctl deluge uninstall --user delugeuser
 ```
 
-- **Upgrade** keeps the current version pair unless you specify a target. It supports **1.3.15 → 2.2.0** and switching **1.2.20 ↔ 2.0.15** within 2.2.0. Ports, paths, WebUI password and compatible ltConfig settings are preserved; no password input is needed.
+- **Upgrade** keeps the current version pair, except existing **2.0.15** runtimes move to **2.0.16** by default. It supports **1.3.15 → 2.2.0** and switching **1.2.20 ↔ 2.0.16** within 2.2.0. Ports, paths, WebUI password and compatible ltConfig settings are preserved; no password input is needed.
 - The target runtime is built before stopping services. Version switches take a full-profile `.pre-upgrade-*` snapshot, including torrent/session data and plugins. Success requires all saved torrents to load; failure restores the profile/services/state when possible and leaves services stopped for review. Download files and the old runtime are not removed.
 - **Uninstall** removes services but keeps configuration, downloads, torrent/session data and the shared runtime.
 - Add **`--purge --yes`** only to deliberately remove active settings: `core.conf`, `web.conf`, `hostlist.conf.1.2` or `hostlist.conf`, `auth` and `ltconfig.conf`. Downloads, torrent/session metadata, plugins and recovery snapshots remain.
@@ -74,7 +74,7 @@ Matching completed runtimes are checked and reused. To build one before creating
 ```bash
 sudo seedboxctl deluge build-runtime \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
+  --deluge-libtorrent-version 2.0.16 \
   --jobs 2
 ```
 

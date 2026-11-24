@@ -102,7 +102,7 @@ seedboxctl - Dedicated-Seedbox V2.1.4
     --user delugeuser \
     --password-stdin \
     --deluge-version 2.2.0 \
-    --deluge-libtorrent-version 2.0.15
+    --deluge-libtorrent-version 2.0.16
 
 Deluge 1.3.15/1.1.14 仍为默认，属于已停止维护的旧版；详情见 deluge --help。
 USAGE
@@ -167,7 +167,7 @@ Examples:
     --user delugeuser \
     --password-stdin \
     --deluge-version 2.2.0 \
-    --deluge-libtorrent-version 2.0.15
+    --deluge-libtorrent-version 2.0.16
 
 Deluge 1.3.15/1.1.14 remains the unsupported legacy default; see deluge --help.
 USAGE

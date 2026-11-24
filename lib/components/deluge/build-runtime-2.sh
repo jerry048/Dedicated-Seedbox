@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 umask 022
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-LT_VERSION=2.0.15 JOBS=2 OFFLINE=0 CACHE=/var/cache/seedbox-deluge-2.2.0
+LT_VERSION=2.0.16 JOBS=2 OFFLINE=0 CACHE=/var/cache/seedbox-deluge-2.2.0
 while (($#)); do
   case "$1" in
     --libtorrent-version)
@@ -25,8 +25,8 @@ while (($#)); do
       ;;
   esac
 done
-case "${LT_VERSION}" in 1.2.20 | 2.0.15) ;; *)
-  echo 'Deluge 2.2.0 supports libtorrent 1.2.20 or 2.0.15.' >&2
+case "${LT_VERSION}" in 1.2.20 | 2.0.16) ;; *)
+  echo 'Deluge 2.2.0 supports libtorrent 1.2.20 or 2.0.16.' >&2
   exit 2
   ;;
 esac
@@ -36,7 +36,7 @@ source /etc/os-release
 case "${ID}:${VERSION_ID}" in debian:*) [[ "${VERSION_ID%%.*}" -ge 12 ]] ;; ubuntu:*) [[ "${VERSION_ID%%.*}" -ge 22 ]] ;; *) false ;; esac || exit 2
 PREFIX="/opt/deluge-2.2.0-lt-${LT_VERSION}"
 LOCKS=("${HERE}/sources-2.2.0-common.lock" "${HERE}/sources-2.2.0-${ARCH}.lock")
-for file in "${LOCKS[@]}" "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.15.patch" "${HERE}/deluge-2.2.0-crypto.patch"; do
+for file in "${LOCKS[@]}" "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.16.patch" "${HERE}/deluge-2.2.0-crypto.patch"; do
   [[ -f "${file}" && ! -L "${file}" ]] || exit 1
 done
 (cd -- "${HERE}" && sha256sum --strict -c patches-2.2.0.lock)
@@ -46,7 +46,7 @@ flock -n 9 || {
   exit 1
 }
 FINGERPRINT="$({
-  cat "${LOCKS[@]}" "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.15.patch" "${HERE}/deluge-2.2.0-crypto.patch" "${BASH_SOURCE[0]}" "${HERE}/runtime-check-2.py" /etc/os-release
+  cat "${LOCKS[@]}" "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.16.patch" "${HERE}/deluge-2.2.0-crypto.patch" "${BASH_SOURCE[0]}" "${HERE}/runtime-check-2.py" /etc/os-release
   printf '%s\n' "${ARCH}" "${LT_VERSION}"
 } | sha256sum | cut -d' ' -f1)"
 if [[ -e "${PREFIX}" || -L "${PREFIX}" ]]; then
@@ -85,7 +85,7 @@ while read -r digest filename url; do
   cp -- "${CACHE}/${filename}" "${WORK}/sources/${filename}"
   printf '%s  %s\n' "${digest}" "${WORK}/sources/${filename}" | sha256sum -c -
 done < <(cat "${LOCKS[@]}")
-cp -- "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.15.patch" "${HERE}/deluge-2.2.0-crypto.patch" "${WORK}/sources/"
+cp -- "${HERE}/patches-2.2.0.lock" "${HERE}/libtorrent-1.2.20.patch" "${HERE}/libtorrent-2.0.16.patch" "${HERE}/deluge-2.2.0-crypto.patch" "${WORK}/sources/"
 (cd -- "${WORK}/sources" && sha256sum --strict -c patches-2.2.0.lock)
 CACHE="${WORK}/sources"
 install -d -m 0755 -o root -g root "${PREFIX}"
@@ -130,6 +130,6 @@ cmake --install "${WORK}/lt-build"
 install -d -m 0755 "${PREFIX}/plugins"
 install -m 0644 "${CACHE}/ltConfig-2.0.0.egg" "${PREFIX}/plugins/"
 env -u PYTHONHOME -u PYTHONPATH -u LD_LIBRARY_PATH "${PYTHON}" -I "${HERE}/runtime-check-2.py" --libtorrent-version "${LT_VERSION}"
-cp -- "${LOCKS[@]}" "${CACHE}/patches-2.2.0.lock" "${CACHE}/libtorrent-1.2.20.patch" "${CACHE}/libtorrent-2.0.15.patch" "${CACHE}/deluge-2.2.0-crypto.patch" "${PREFIX}/"
+cp -- "${LOCKS[@]}" "${CACHE}/patches-2.2.0.lock" "${CACHE}/libtorrent-1.2.20.patch" "${CACHE}/libtorrent-2.0.16.patch" "${CACHE}/deluge-2.2.0-crypto.patch" "${PREFIX}/"
 printf '%s\n' "${FINGERPRINT}" >"${PREFIX}/runtime.id"
 printf 'Deluge 2.2.0 / libtorrent %s installed at %s; system Python is unchanged.\n' "${LT_VERSION}" "${PREFIX}"

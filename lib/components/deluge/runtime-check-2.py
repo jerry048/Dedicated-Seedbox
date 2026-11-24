@@ -15,7 +15,7 @@ from deluge.core import core
 from deluge.ui.web import server
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--libtorrent-version", choices=("1.2.20", "2.0.15"), required=True)
+parser.add_argument("--libtorrent-version", choices=("1.2.20", "2.0.16"), required=True)
 args = parser.parse_args()
 assert sys.version_info[:3] == (3, 11, 17), sys.version
 assert sys.prefix == "/opt/deluge-2.2.0-lt-" + args.libtorrent_version, sys.prefix

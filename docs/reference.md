@@ -251,11 +251,11 @@ sudo seedboxctl deluge add-user \
 | `--password-file FILE`                | Read the WebUI password from a file.                                |
 | `--password PASSWORD`                 | Pass the password as an argument. Less safe.                        |
 | `--deluge-version VERSION`            | `1.3.15` (default) or `2.2.0`.                                      |
-| `--deluge-libtorrent-version VERSION` | `1.1.14` with 1.3.15; `1.2.20` or `2.0.15` (default) with 2.2.0.    |
+| `--deluge-libtorrent-version VERSION` | `1.1.14` with 1.3.15; `1.2.20` or `2.0.16` (default) with 2.2.0.    |
 | `--deluge-web-port PORT`              | WebUI port. Default `8112`.                                         |
 | `--deluge-rpc-port PORT`              | RPC port. Default `58846`.                                          |
 | `--deluge-incoming-port PORT`         | BitTorrent port. Default `45000`.                                   |
-| `--deluge-cache-mib N`                | Cache in MiB for libtorrent 1.x; default `256`. Rejected by 2.0.15. |
+| `--deluge-cache-mib N`                | Cache in MiB for libtorrent 1.x; default `256`. Rejected by libtorrent 2.x. |
 | `--jobs N`                            | Runtime build jobs. Default `2`.                                    |
 | `--source-dir DIR`                    | Verified local sources for an offline build.                        |
 
@@ -265,14 +265,14 @@ Upgrade, status, uninstall:
 
 ```bash
 sudo seedboxctl deluge upgrade --user delugeuser
-sudo seedboxctl deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
+sudo seedboxctl deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.16
 sudo seedboxctl deluge status --user delugeuser --check
 sudo seedboxctl deluge uninstall --user delugeuser
 ```
 
-Without version options, Deluge upgrade keeps the recorded pair. Explicit targets support 1.3.15 → 2.2.0 and switching between 2.2.0's libtorrent 1.2.20/2.0.15 runtimes, with a full-profile backup and torrent-load checks. Downgrades to 1.3.15 are refused. Disable third-party plugins first; see the [Deluge upgrade guide](../Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall) for settings conversion and recovery.
+Without version options, Deluge upgrade keeps the recorded pair, except existing 2.0.15 runtimes move to 2.0.16. Explicit targets support 1.3.15 → 2.2.0 and switching between 2.2.0's libtorrent 1.2.20/2.0.16 runtimes, with a full-profile backup and torrent-load checks. Downgrades to 1.3.15 are refused. Disable third-party plugins first; see the [Deluge upgrade guide](../Torrent%20Clients/Deluge/README.md#upgrade-and-uninstall) for settings conversion and recovery.
 
-Switching from libtorrent 2.0.15 to 1.2.20 asks for a cache size in MiB (1–1048576, no default) before building or stopping services. Non-interactive upgrades must supply `--deluge-cache-mib N` or `--cache-mib N`; these upgrade options are accepted only for this switch. Other upgrades preserve existing cache settings.
+Switching from libtorrent 2.x to 1.2.20 asks for a cache size in MiB (1-1048576, no default) before building or stopping services. Non-interactive upgrades must supply `--deluge-cache-mib N` or `--cache-mib N`; these upgrade options are accepted only for this switch. Other upgrades preserve existing cache settings.
 
 ### qBittorrent
 

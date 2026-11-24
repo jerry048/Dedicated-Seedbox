@@ -172,10 +172,10 @@ def read_settings(profile):
         blocks = ltconfig.get("settings", {}).get("cache_size", blocks)
     if type(blocks) is not int or not -1 <= blocks <= 67108864:
         raise ValueError("Invalid Deluge cache size")
-    result["cache_blocks"] = blocks if LT_VERSION != "2.0.15" else "n/a"
+    result["cache_blocks"] = blocks if not LT_VERSION.startswith("2.") else "n/a"
     result["cache_mib"] = (
         "n/a"
-        if LT_VERSION == "2.0.15"
+        if LT_VERSION.startswith("2.")
         else "auto"
         if blocks == -1
         else (blocks + 63) // 64
@@ -427,16 +427,16 @@ def restore_upgrade(profile, source):
 
 
 def upgrade_values(profile, target_version, target_lib, target_cache_mib=None):
-    if target_version != "2.2.0" or target_lib not in ("1.2.20", "2.0.15"):
+    if target_version != "2.2.0" or target_lib not in ("1.2.20", "2.0.16"):
         raise ValueError("Automatic downgrade to Deluge 1.3.15 is not supported")
-    if LT_VERSION == "2.0.15" and target_lib == "1.2.20":
+    if LT_VERSION.startswith("2.") and target_lib == "1.2.20":
         if type(target_cache_mib) is not int or not 1 <= target_cache_mib <= 1048576:
             raise ValueError(
                 "Switching to libtorrent 1.2.20 requires an explicit cache size of 1..1048576 MiB"
             )
     elif target_cache_mib is not None:
         raise ValueError(
-            "Upgrade cache options are only for switching from libtorrent 2.0.15 to 1.2.20"
+            "Upgrade cache options are only for switching from libtorrent 2.x to 1.2.20"
         )
     raw, values = read_settings(profile)
     core = decode_config(raw["core.conf"])
@@ -509,7 +509,7 @@ def migrate_upgrade(profile, target_version, target_lib, target_cache_mib=None):
         "use_disk_cache_pool",
         "low_prio_disk",
     }
-    if target_lib == "2.0.15":
+    if target_lib == "2.0.16":
         supported = {
             key: value for key, value in supported.items() if key not in cache_controls
         }
@@ -520,7 +520,7 @@ def migrate_upgrade(profile, target_version, target_lib, target_cache_mib=None):
             key: value
             for key, value in previous.get("settings", {}).items()
             if key in supported
-            and not (LT_VERSION == "2.0.15" and key in cache_controls)
+            and not (LT_VERSION.startswith("2.") and key in cache_controls)
         }
     )
     # Keep only controls implemented by the destination libtorrent ABI.
@@ -579,11 +579,11 @@ def migrate_upgrade(profile, target_version, target_lib, target_cache_mib=None):
             core.pop(key, None)
         web["sessions"] = {}
         web.setdefault("language", "")
-    if target_lib == "2.0.15":
+    if target_lib == "2.0.16":
         core.pop("cache_size", None)
         core.pop("cache_expiry", None)
     else:
-        if LT_VERSION == "2.0.15":
+        if LT_VERSION.startswith("2."):
             core["cache_size"] = blocks
         else:
             core.setdefault("cache_size", blocks)
@@ -789,7 +789,7 @@ def create(args, account, home, profile):
             listen_reuse_port=False,
         )
         ltconfig = modern_preset(LT_VERSION, cache_blocks)
-        if LT_VERSION == "2.0.15":
+        if LT_VERSION.startswith("2."):
             core.pop("cache_size", None)
             core.pop("cache_expiry", None)
     write(profile / "core.conf", core)
@@ -924,12 +924,13 @@ def main():
     args = parser.parse_args()
     DELUGE_VERSION = args.deluge_version
     LT_VERSION = args.libtorrent_version or (
-        "1.1.14" if DELUGE_VERSION == "1.3.15" else "2.0.15"
+        "1.1.14" if DELUGE_VERSION == "1.3.15" else "2.0.16"
     )
     if (DELUGE_VERSION, LT_VERSION) not in (
         ("1.3.15", "1.1.14"),
         ("2.2.0", "1.2.20"),
         ("2.2.0", "2.0.15"),
+        ("2.2.0", "2.0.16"),
     ):
         raise ValueError("Unsupported Deluge/libtorrent pair")
     if DELUGE_VERSION == "2.2.0":

@@ -263,11 +263,11 @@ sudo seedboxctl --lang zh-CN deluge add-user \
 | `--password-file FILE`                | 从文件读取 WebUI 密码。                                           |
 | `--password PASSWORD`                 | 通过参数传入密码。安全性较低。                                    |
 | `--deluge-version VERSION`            | `1.3.15`（默认）或 `2.2.0`。                                      |
-| `--deluge-libtorrent-version VERSION` | 1.3.15 搭配 `1.1.14`；2.2.0 搭配 `1.2.20` 或 `2.0.15`（默认）。   |
+| `--deluge-libtorrent-version VERSION` | 1.3.15 搭配 `1.1.14`；2.2.0 搭配 `1.2.20` 或 `2.0.16`（默认）。   |
 | `--deluge-web-port PORT`              | WebUI 端口。默认 `8112`。                                         |
 | `--deluge-rpc-port PORT`              | RPC 端口。默认 `58846`。                                          |
 | `--deluge-incoming-port PORT`         | BT 端口。默认 `45000`。                                           |
-| `--deluge-cache-mib N`                | libtorrent 1.x 的缓存大小（MiB），默认 `256`；2.0.15 拒绝该选项。 |
+| `--deluge-cache-mib N`                | libtorrent 1.x 的缓存大小（MiB），默认 `256`；libtorrent 2.x 拒绝该选项。 |
 | `--jobs N`                            | 运行环境的编译任务数。默认 `2`。                                  |
 | `--source-dir DIR`                    | 离线构建所用的已校验本地源码。                                    |
 
@@ -277,14 +277,14 @@ sudo seedboxctl --lang zh-CN deluge add-user \
 
 ```bash
 sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser
-sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
+sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.16
 sudo seedboxctl --lang zh-CN deluge status --user delugeuser --check
 sudo seedboxctl --lang zh-CN deluge uninstall --user delugeuser
 ```
 
-Deluge 升级不指定版本时保留已记录的组合。显式目标支持 1.3.15 → 2.2.0，以及 2.2.0 的 libtorrent 1.2.20/2.0.15 运行环境切换，并完整备份配置目录、检查种子加载。拒绝降级至 1.3.15；请先禁用第三方插件。设置转换及恢复说明见 [Deluge 升级指南](../Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)。
+Deluge 升级不指定版本时保留已记录的组合，现有 2.0.15 运行环境默认升级到 2.0.16。显式目标支持 1.3.15 → 2.2.0，以及 2.2.0 的 libtorrent 1.2.20/2.0.16 运行环境切换，并完整备份配置目录、检查种子加载。拒绝降级至 1.3.15；请先禁用第三方插件。设置转换及恢复说明见 [Deluge 升级指南](../Torrent%20Clients/Deluge/README.zh-CN.md#upgrade-and-uninstall)。
 
-从 libtorrent 2.0.15 切换至 1.2.20 时，会在构建或停止服务前要求输入缓存大小（MiB，1–1048576，无默认值）。非交互升级须指定 `--deluge-cache-mib N` 或 `--cache-mib N`；这两个升级参数仅用于此切换，其他升级保留已有缓存设置。
+从 libtorrent 2.x 切换至 1.2.20 时，会在构建或停止服务前要求输入缓存大小（MiB，1–1048576，无默认值）。非交互升级须指定 `--deluge-cache-mib N` 或 `--cache-mib N`；这两个升级参数仅用于此切换，其他升级保留已有缓存设置。
 
 ### qBittorrent
 

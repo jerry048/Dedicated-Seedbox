@@ -8,7 +8,7 @@ Deluge 是可选组件，需要 **root 和 systemd**，不支持 rootless。使�
 | -------------- | -------------------- | ------------------------ | ----------------------------- |
 | 1.3.15（默认） | 1.1.14               | Debian 11 / Ubuntu 20.04 | `/opt/deluge-1.3.15`          |
 | 2.2.0          | 1.2.20               | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-1.2.20` |
-| 2.2.0          | 2.0.15（2.2.0 默认） | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-2.0.15` |
+| 2.2.0          | 2.0.16（2.2.0 默认） | Debian 12 / Ubuntu 22.04 | `/opt/deluge-2.2.0-lt-2.0.16` |
 
 **旧版提示：** Deluge 1.3.15 及其 Python 2.7/OpenSSL 1.1.1 组件已停止维护，仅在确有需要时使用。私有安装和固定下载版本不代表软件安全或仍受维护。
 
@@ -21,7 +21,7 @@ sudo bash bin/seedboxctl --lang zh-CN deluge add-user \
   --user delugeuser \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
+  --deluge-libtorrent-version 2.0.16 \
   --jobs 2
 ```
 
@@ -49,11 +49,11 @@ sudo bash bin/seedboxctl --lang zh-CN deluge add-user \
 
 ```bash
 sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser
-sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.15
+sudo seedboxctl --lang zh-CN deluge upgrade --user delugeuser --deluge-version 2.2.0 --deluge-libtorrent-version 2.0.16
 sudo seedboxctl --lang zh-CN deluge uninstall --user delugeuser
 ```
 
-- **升级**默认保留当前版本组合，也可显式指定目标。支持 **1.3.15 → 2.2.0**，以及 2.2.0 内的 **1.2.20 ↔ 2.0.15** 切换。保留端口、路径、WebUI 密码及兼容的 ltConfig 设置，无需输入密码。
+- **升级**默认保留当前版本组合（现有 **2.0.15** 运行环境默认升级到 **2.0.16**），也可显式指定目标。支持 **1.3.15 → 2.2.0**，以及 2.2.0 内的 **1.2.20 ↔ 2.0.16** 切换。保留端口、路径、WebUI 密码及兼容的 ltConfig 设置，无需输入密码。
 - 停止服务前会先构建目标运行环境。切换版本时创建完整配置目录的 `.pre-upgrade-*` 快照，包括种子/会话数据和插件；全部已保存种子加载后才算成功。失败时尽可能恢复配置、服务文件和状态，并保持服务停止供检查。不会删除下载文件和旧运行环境。
 - **卸载**移除服务，保留配置、下载、种子/会话数据及共用运行环境。
 - 仅在确实需要删除活动设置时加 **`--purge --yes`**：删除 `core.conf`、`web.conf`、`hostlist.conf.1.2` 或 `hostlist.conf`、`auth` 和 `ltconfig.conf`。下载、种子/会话元数据、插件和恢复快照仍会保留。
@@ -76,7 +76,7 @@ sudo seedboxctl --lang zh-CN deluge uninstall --user delugeuser
 ```bash
 sudo seedboxctl --lang zh-CN deluge build-runtime \
   --deluge-version 2.2.0 \
-  --deluge-libtorrent-version 2.0.15 \
+  --deluge-libtorrent-version 2.0.16 \
   --jobs 2
 ```
 
