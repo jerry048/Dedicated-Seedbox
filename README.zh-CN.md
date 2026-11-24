@@ -18,15 +18,15 @@
 
 ### 独享服务器或 VPS
 
-在自己控制的主机/完整虚拟机上以 root 运行。安装 **qBittorrent 5.3.0 + libtorrent 2.1.2**、系统调优及 **BBRw**：
+在自己控制的主机/完整虚拟机上以 root 运行。安装 **qBittorrent 5.3.1 + libtorrent 2.1.3**、系统调优及 **BBRw**：
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) --lang zh-CN \
   --user jerry048 \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --components qbittorrent,tuning,bbr \
   --bbr-algo bbrw
 ```
@@ -50,9 +50,9 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 | ------------------------------------------- | ------------------ |
 | `4.1.9.1`                                   | `1.1.14`           |
 | `4.2.5`、`4.3.9`                            | `1.2.20`           |
-| `4.4.5`、`4.5.5`、`4.6.7`、`5.0.5`、`5.1.4` | `1.2.20`、`2.0.15` |
-| `5.2.4`                                     | `1.2.20`、`2.0.15` |
-| `5.3.0`                                     | `1.2.20`、`2.1.2`  |
+| `4.4.5`、`4.5.5`、`4.6.7`、`5.0.5`、`5.1.4` | `1.2.20`、`2.0.16` |
+| `5.2.4`                                     | `1.2.20`、`2.0.16` |
+| `5.3.1`                                     | `1.2.20`、`2.1.3`  |
 
 BBR 变体（`--bbr-algo`）：`bbrv3`、`bbrx`、`bbrx_old`、`bbrw`、`bbr_brutal`、`bbrw_brutal`。
 
@@ -68,8 +68,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --webui-username jerry048 \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3
 ```
 
 使用安装器显示的 WebUI 地址，默认端口为 **8080**。请限制 WebUI 仅受信任网络可访问，在公开暴露前审查安全设置。安装后使用 `seedboxctl`；rootless 账号也可直接运行 `~/.local/bin/seedboxctl`。
@@ -107,8 +107,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
 sudo seedboxctl --lang zh-CN qbittorrent upgrade \
   --user jerry048 \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3
 ```
 
 发行版软件包安装：

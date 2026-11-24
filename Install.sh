@@ -46,8 +46,8 @@ usage() {
   -u USER                    Linux 用户名；rootless 模式下作为 WebUI 用户名
   -p PASSWORD                qBittorrent WebUI 密码
   -c N                       qBittorrent 缓存大小，单位 MiB
-  -q VERSION                 安装静态版 qBittorrent，例如 5.3.0
-  -l VERSION                 静态版 libtorrent，例如 v2.1.2
+  -q VERSION                 安装静态版 qBittorrent，例如 5.3.1
+  -l VERSION                 静态版 libtorrent，例如 v2.1.3
   -b                         安装 autobrr（需要 root）
   -v                         安装 Vertex（需要 root）
   -r                         安装 autoremove-torrents（需要 root）
@@ -136,16 +136,16 @@ qBittorrent 配置调优：
     --user alice \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     < /path/to/password.txt
   ./Install.sh --lang zh-CN \
     --rootless \
     --webui-username alice \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --service-mode auto \
     < /path/to/password.txt
 USAGE
@@ -161,8 +161,8 @@ Short-option aliases:
   -u USER                    Linux user; in rootless mode, WebUI username
   -p PASSWORD                qBittorrent WebUI password
   -c N                       qBittorrent cache size in MiB
-  -q VERSION                 Install qBittorrent static build, for example 5.3.0
-  -l VERSION                 Static libtorrent version, for example v2.1.2
+  -q VERSION                 Install qBittorrent static build, for example 5.3.1
+  -l VERSION                 Static libtorrent version, for example v2.1.3
   -b                         Install autobrr; root required
   -v                         Install Vertex; root required
   -r                         Install autoremove-torrents; root required
@@ -253,16 +253,16 @@ Examples:
     --user alice \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     < /path/to/password.txt
   ./Install.sh \
     --rootless \
     --webui-username alice \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --service-mode auto \
     < /path/to/password.txt
 USAGE

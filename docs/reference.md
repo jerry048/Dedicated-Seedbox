@@ -54,8 +54,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --password-stdin \
   --cache 3072 \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --components qbittorrent,tuning,autobrr,vertex,autoremove-torrents \
   < /path/to/password.txt
 
@@ -71,8 +71,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --password-stdin \
   --cache 3072 \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --service-mode auto \
   < /path/to/password.txt
 
@@ -285,8 +285,8 @@ sudo seedboxctl qbittorrent add-user \
   --user jerry048 \
   --password-stdin \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --cache 3072 \
   --web-port 8080 \
   --incoming-port 45000 \
@@ -357,8 +357,8 @@ seedboxctl qbittorrent install-self \
   --password-stdin \
   --webui-username jerry048 \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --cache 3072 \
   --web-port 8080 \
   --incoming-port 45000 \
@@ -413,8 +413,8 @@ sudo seedboxctl qbittorrent upgrade \
   --user jerry048 \
   --password-stdin \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   < /path/to/password.txt
 ```
 

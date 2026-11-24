@@ -16,15 +16,15 @@ Choose only one password input method: `--password`, `--password-file`, or `--pa
 
 ### Dedicated server or VPS
 
-Run as root on a host/full VM you control. This installs **qBittorrent 5.3.0 + libtorrent 2.1.2**, host tuning, and **BBRw**:
+Run as root on a host/full VM you control. This installs **qBittorrent 5.3.1 + libtorrent 2.1.3**, host tuning, and **BBRw**:
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) \
   --user jerry048 \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2 \
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3 \
   --components qbittorrent,tuning,bbr \
   --bbr-algo bbrw
 ```
@@ -48,9 +48,9 @@ Available qBittorrent/libtorrent pairs:
 | ------------------------------------------- | ------------------ |
 | `4.1.9.1`                                   | `1.1.14`           |
 | `4.2.5`, `4.3.9`                            | `1.2.20`           |
-| `4.4.5`, `4.5.5`, `4.6.7`, `5.0.5`, `5.1.4` | `1.2.20`, `2.0.15` |
-| `5.2.4`                                     | `1.2.20`, `2.0.15` |
-| `5.3.0`                                     | `1.2.20`, `2.1.2`  |
+| `4.4.5`, `4.5.5`, `4.6.7`, `5.0.5`, `5.1.4` | `1.2.20`, `2.0.16` |
+| `5.2.4`                                     | `1.2.20`, `2.0.16` |
+| `5.3.1`                                     | `1.2.20`, `2.1.3`  |
 
 BBR variants (`--bbr-algo`): `bbrv3`, `bbrx`, `bbrx_old`, `bbrw`, `bbr_brutal`, `bbrw_brutal`.
 
@@ -66,8 +66,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/ma
   --webui-username jerry048 \
   --password 'REPLACE_WITH_A_STRONG_PASSWORD' \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3
 ```
 
 Use the WebUI URL printed by the installer; its default port is **8080**. Keep WebUI access restricted to trusted networks and review its security settings before exposing it publicly. After installation, use `seedboxctl` (or `~/.local/bin/seedboxctl` for rootless accounts).
@@ -103,8 +103,8 @@ For a static install:
 sudo seedboxctl qbittorrent upgrade \
   --user jerry048 \
   --source static \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3
 ```
 
 For a distro-package install:

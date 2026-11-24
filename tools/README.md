@@ -177,16 +177,16 @@ Unknown architecture folders are ignored.
 
 ## Filtering examples
 
-Generate only qBittorrent `5.3.0` entries:
+Generate only qBittorrent `5.3.1` entries:
 
 ```bash
-tools/generate_qbittorrent_manifest.py --qb-version 5.3.0
+tools/generate_qbittorrent_manifest.py --qb-version 5.3.1
 ```
 
-Generate only entries for libtorrent `v2.1.2`:
+Generate only entries for libtorrent `v2.1.3`:
 
 ```bash
-tools/generate_qbittorrent_manifest.py --libtorrent-version v2.1.2
+tools/generate_qbittorrent_manifest.py --libtorrent-version v2.1.3
 ```
 
 Combine filters:
@@ -194,8 +194,8 @@ Combine filters:
 ```bash
 tools/generate_qbittorrent_manifest.py \
   --arch amd64 \
-  --qb-version 5.3.0 \
-  --libtorrent-version v2.1.2
+  --qb-version 5.3.1 \
+  --libtorrent-version v2.1.3
 ```
 
 Repeat options instead of using comma-separated values:
@@ -204,7 +204,7 @@ Repeat options instead of using comma-separated values:
 tools/generate_qbittorrent_manifest.py \
   --arch amd64 \
   --arch arm64 \
-  --qb-version 5.3.0 \
+  --qb-version 5.3.1 \
   --qb-version 5.0.4
 ```
 

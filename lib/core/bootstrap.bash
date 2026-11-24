@@ -71,8 +71,8 @@ seedboxctl - Dedicated-Seedbox V2.1.4
     --user jerry048 \
     --password-stdin \
     --cache 3072 \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --web-port 8080 \
     --incoming-port 45000 \
     --source static
@@ -87,8 +87,8 @@ seedboxctl - Dedicated-Seedbox V2.1.4
   seedboxctl --lang zh-CN qbittorrent install-self \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --web-port 8080 \
     --incoming-port 45000 \
     --service-mode auto
@@ -136,8 +136,8 @@ Examples:
     --user jerry048 \
     --password-stdin \
     --cache 3072 \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --web-port 8080 \
     --incoming-port 45000 \
     --source static
@@ -152,8 +152,8 @@ Examples:
   seedboxctl qbittorrent install-self \
     --password-stdin \
     --source static \
-    --qb-version 5.3.0 \
-    --libtorrent-version v2.1.2 \
+    --qb-version 5.3.1 \
+    --libtorrent-version v2.1.3 \
     --web-port 8080 \
     --incoming-port 45000 \
     --service-mode auto
